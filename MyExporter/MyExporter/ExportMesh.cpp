@@ -1,9 +1,11 @@
 #include "stdafx.h"
 #include "ExportMesh.h"
+#include "ExportMaterial.h"
 
 
 ExpoMesh::ExpoMesh( IGameNode* node )
-:ExpoObject(node)
+:ExpoObject()
+,m_pNode(node)
 ,m_mesh(nullptr)
 {
 
@@ -45,11 +47,17 @@ bool ExpoMesh::_WriteMesh()
 	TiXmlElement* meshElem = new TiXmlElement("mesh");  
 	pXmlDoc->LinkEndChild(meshElem);  
 
-	for	(size_t i=0; i<m_subMeshes.size(); ++i)
-		_WriteSubmesh(m_subMeshes[i], meshElem);
+	_WriteSubmesh(m_subMesh, meshElem);
 
-	pXmlDoc->SaveFile("E:\\3ds Max 2010\\plugins\\object.xml");  
+	pXmlDoc->SaveFile("E:\\3ds Max 2010\\plugins\\object.mesh.xml");  
 	delete pXmlDoc;
+
+	//导出SubMesh的材质
+	m_exporter->DoExport(eExpoType_Material, m_pNode);
+
+	//finished
+	m_pNode->ReleaseIGameObject();
+	m_mesh = nullptr;
 
 	return true;
 }
@@ -104,14 +112,14 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 	vertexbuffer->SetAttribute("positions", "true");  
 	vertexbuffer->SetAttribute("normals", "true");  
 	vertexbuffer->SetAttribute("colours_diffuse", subMesh.bHasDiffuse ? "true" : "false");  
-	vertexbuffer->SetAttribute("texture_coords", 0);
+	vertexbuffer->SetAttribute("texture_coords", subMesh.uvCount);
 
-// 	for (index = 0; index < texMap.Count(); index++)  
-// 	{  
-// 		memset(stub, 0, 128);  
-// 		sprintf(stub, "texture_coords_dimension_%d", index);  
-// 		vertexbuffer->SetAttribute(stub, "2");  
-// 	}  
+	for (int iUv=0; iUv<subMesh.uvCount; ++iUv)  
+	{  
+		memset(stub, 0, 128);  
+		sprintf(stub, "texture_coords_dimension_%d", iUv);  
+		vertexbuffer->SetAttribute(stub, "float2");  
+	}  
  
 	for (int iFace=0; iFace<nFace; iFace++)
 	{  
@@ -145,6 +153,18 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 			normal->SetDoubleAttribute("x", vertex.normal.x);
 			normal->SetDoubleAttribute("y", vertex.normal.y);
 			normal->SetDoubleAttribute("z", vertex.normal.z);
+
+			//uv
+			for (int ti=0; ti<subMesh.uvCount; ti++) 
+			{
+				const Point3& uvw = vertex.uv[ti];
+
+				TiXmlElement* uvNode = new TiXmlElement("texcoord");  
+				vertNode->LinkEndChild(uvNode);  
+
+				uvNode->SetDoubleAttribute("u", uvw.x);
+				uvNode->SetDoubleAttribute("v", 1.0 - uvw.y);
+			}
 		}
 	}
 
@@ -171,16 +191,20 @@ void ExpoMesh::_CollectInfo()
 	Tab<int> texMap		= m_mesh->GetActiveMapChannelNum();
 	IGameMaterial* mtl	= m_pNode->GetNodeMaterial();
 
-	SSubMesh submesh;
-	submesh.bUse32bitindex = iFaceCount > 65535;
-	submesh.bHasDiffuse = iDiffuseVert > 0;
-	if(mtl) 
-		submesh.matName = mtl->GetMaterialName();
-	submesh.faces.resize(iFaceCount);
+	m_subMesh.bUse32bitindex = iFaceCount > 65535;
+	m_subMesh.bHasDiffuse = iDiffuseVert > 0;
+	m_subMesh.uvCount = texMap.Count();
+
+	if (texMap.Count() > 1) --m_subMesh.uvCount;
+
+	if(mtl) m_subMesh.matName = mtl->GetMaterialName();
+	else	m_subMesh.matName = ExpoMaterial::DEFAULT_MAT_NAME;
+
+	m_subMesh.faces.resize(iFaceCount);
 
 	for (int iFace=0; iFace<iFaceCount; ++iFace)
 	{
-		SFace& face = submesh.faces[iFace];
+		SFace& face = m_subMesh.faces[iFace];
 		FaceEx* pFace = m_mesh->GetFace(iFace);
 
 		for (int i = 0; i < 3; i++)
@@ -194,22 +218,22 @@ void ExpoMesh::_CollectInfo()
 			//normal
 			face.vertexs[i].normal = m_mesh->GetNormal(pFace, i);
 
-// 			DWORD idx[3];  
-// 			Point3 tv;  
-// 			for (int ch = 0; ch < texMap.Count(); ch++)  
-// 			{  
-// 
-// 				if (m_mesh->GetMapFaceIndex(texMap[ch], index, idx))  
-// 					tv = m_mesh->GetMapVertex(texMap[ch], idx[i]);  
-// 				else  
-// 					tv = m_mesh->GetMapVertex(texMap[ch], pFace->vert[i]);  
-// 
-// 				m_tvMap.insert(std::make_pair(texMap[ch], tv));  
-// 			}   
+			//uv
+			int ch = m_subMesh.uvCount > 1 ? 1 : 0;
+			for (; ch < texMap.Count(); ch++)
+			{
+				DWORD idx[3];
+				Point3 tv;
+
+				if (m_mesh->GetMapFaceIndex(texMap[ch], iFace, idx))  
+					tv = m_mesh->GetMapVertex(texMap[ch], idx[i]);  
+				else  
+					tv = m_mesh->GetMapVertex(texMap[ch], pFace->vert[i]);  
+
+				face.vertexs[i].uv.push_back(Point3(tv.x, tv.y, tv.z));
+			}
 		}  
 	}
-
-	m_subMeshes.push_back(std::move(submesh));
 }
 
 

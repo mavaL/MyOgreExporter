@@ -16,6 +16,7 @@
 #include "resource.h"
 #include "ExportDialog.h"
 #include "ExportMesh.h"
+#include "ExportMaterial.h"
 
 #define MyExporter_CLASS_ID	Class_ID(0x8b0c44de, 0x651b6a99)
 
@@ -150,33 +151,30 @@ void MyExporter::Destroy(HWND hWnd)
 void MyExporter::DoExport()
 {
 	if(m_rootNodes.size() > 1)
-		MessageBox(ip->GetMAXHWnd(), "Only support export one object now!", "Warning", MB_ICONWARNING);
+	{
+		MessageBox(ip->GetMAXHWnd(), "Only support export one object now!", "Ogre exporter", MB_ICONINFORMATION);
+		return;
+	}
 
 	if (!m_rootNodes.empty())
+		DoExport(eExpoType_Mesh, m_rootNodes[0]);
+}
+
+bool MyExporter::DoExport( eExpoType type, IGameNode* node )
+{
+	ExpoObject* obj = nullptr;
+
+	switch (type)
 	{
-		ExpoObject* obj = nullptr;
-		auto type = m_rootNodes[0]->GetIGameObject()->GetIGameType();
-		switch (type)
-		{
-		case IGameObject::IGAME_MESH:
-			{
-				obj = new ExpoMesh(m_rootNodes[0]);
-			}
-			break;
-
-		default:
-			{
-				MessageBox(ip->GetMAXHWnd(), "Not support export type!", "Ogre exporter", MB_OK);
-			}
-			return;
-		}
-		
-		obj->Export();
-// 		if(obj->Export())
-// 			MessageBox(ip->GetMAXHWnd(), "Export finished.", "Finished", MB_OK);
-// 		else
-// 			MessageBox(ip->GetMAXHWnd(), "Export failed.", "Finished", MB_OK);
-
-		SAFE_DELETE(obj);
+	case eExpoType_Mesh:		obj = new ExpoMesh(node); break;
+	case eExpoType_Material:	obj = new ExpoMaterial(node); break;
+	default:					MessageBox(ip->GetMAXHWnd(), "Not support export type!", "Ogre exporter", MB_OK); return false;
 	}
+
+	obj->m_exporter = this;
+	bool ret = obj->Export();
+
+	SAFE_DELETE(obj);
+
+	return ret;
 }

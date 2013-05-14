@@ -24,6 +24,12 @@
 
 #include "utilapi.h"
 
+enum eExpoType
+{
+	eExpoType_Mesh,
+	eExpoType_Material
+};
+
 class MyExporter : public UtilityObj 
 {
 	friend class ExpoDlg;
@@ -41,6 +47,7 @@ public:
 	virtual void Destroy(HWND hWnd);
 
 	void		 DoExport();
+	bool		 DoExport(eExpoType type, IGameNode* node);
 
 public:
 	HWND				hPanel;

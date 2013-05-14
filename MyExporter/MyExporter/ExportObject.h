@@ -8,20 +8,22 @@
 #ifndef ExportObject_h__
 #define ExportObject_h__
 
+#include "MyExporter.h"
+
 class IGameNode;
 class IGameMesh;
 
 class ExpoObject
 {
 public:
-	ExpoObject(IGameNode* node);
+	ExpoObject();
 	virtual ~ExpoObject() {}
 
 public:
 	virtual bool	Export() = 0;
 
-protected:
-	IGameNode*		m_pNode;
+public:
+	MyExporter*		m_exporter;
 };
 
 #endif // ExportObject_h__

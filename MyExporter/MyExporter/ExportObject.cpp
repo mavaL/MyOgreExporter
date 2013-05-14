@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "ExportObject.h"
 
-ExpoObject::ExpoObject( IGameNode* node )
-:m_pNode(node)
+ExpoObject::ExpoObject()
+:m_exporter(nullptr)
 {
 
 }

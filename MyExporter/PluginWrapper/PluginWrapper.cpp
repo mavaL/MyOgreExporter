@@ -81,11 +81,11 @@ typedef void (*EXPORT_FUNC)(Interface* ip,IUtil* iu);
 
 void PluginWrapper::BeginEditParams(Interface* ip,IUtil* iu) 
 {
-	m_hExporter = ::LoadLibrary("F:\\MyOgreMaxExporter\\MyExporter\\Build\\Bin\\Debug\\MyExporter.dlu");
+	m_hExporter = ::LoadLibrary("F:\\MyOgreExporter\\MyExporter\\Build\\Bin\\Debug\\MyExporter.dlu");
 
 	if(!m_hExporter)
 	{
-		MessageBox(0, "Load Exporter.dll failed!", "Error", MB_ICONERROR);
+		MessageBox(ip->GetMAXHWnd(), "Load Exporter.dll failed!", "Error", MB_ICONERROR);
 		return;
 	}
 
@@ -93,7 +93,7 @@ void PluginWrapper::BeginEditParams(Interface* ip,IUtil* iu)
 	
 	if(!initFunc)
 	{
-		MessageBox(0, "Get InitExporter() failed!", "Error", MB_ICONERROR);
+		MessageBox(ip->GetMAXHWnd(), "Get InitExporter() failed!", "Error", MB_ICONERROR);
 		return;
 	}
 
@@ -106,7 +106,7 @@ void PluginWrapper::EndEditParams(Interface* ip,IUtil* iu)
 
 	if(!destroyFunc)
 	{
-		MessageBox(0, "Get DestroyExporter() failed!", "Error", MB_ICONERROR);
+		MessageBox(ip->GetMAXHWnd(), "Get DestroyExporter() failed!", "Error", MB_ICONERROR);
 		return;
 	}
 

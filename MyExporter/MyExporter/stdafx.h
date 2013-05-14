@@ -22,6 +22,9 @@
 #include <set>
 #include <list>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <iosfwd>
 
 #include <Windows.h>
 

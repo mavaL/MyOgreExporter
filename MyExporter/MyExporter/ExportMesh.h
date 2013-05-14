@@ -12,14 +12,14 @@
 
 class ExpoMesh : public ExpoObject
 {
-	typedef std::unordered_map<int, Point2>	texUvMap;
+	typedef std::vector<Point3>	VecUV;
 	struct SVertex
 	{
 		Point3		position;
 		Point3		normal;
 		Point3		diffuse;
 		float		alpha;
-		texUvMap	uvMap;
+		VecUV		uv;
 	};
 
 	struct SFace
@@ -29,12 +29,13 @@ class ExpoMesh : public ExpoObject
 
 	struct SSubMesh
 	{
-		SSubMesh():matName(""),bUse32bitindex(false),bHasDiffuse(false) {}
+		SSubMesh():matName(""),bUse32bitindex(false),bHasDiffuse(false),uvCount(0) {}
 
 		std::string			matName;
 		std::vector<SFace>	faces;
 		bool				bUse32bitindex;
 		bool				bHasDiffuse;
+		int					uvCount;
 	};
 
 public:
@@ -49,9 +50,9 @@ private:
 	bool		_WriteSubmesh(const SSubMesh& subMesh, TiXmlElement* xmlParent);
 
 private:
+	IGameNode*				m_pNode;
 	IGameMesh*				m_mesh;
-	std::map<int, Point3>	m_tvMap;	//???
-	std::vector<SSubMesh>	m_subMeshes;
+	SSubMesh				m_subMesh;
 };
 
 #endif // ExportMesh_h__
