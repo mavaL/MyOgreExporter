@@ -9,6 +9,7 @@
 #define ExportMesh_h__
 
 #include "ExportObject.h"
+#include "ExportSkeleton.h"
 
 class ExpoMesh : public ExpoObject
 {
@@ -29,13 +30,18 @@ class ExpoMesh : public ExpoObject
 
 	struct SSubMesh
 	{
-		SSubMesh():matName(""),bUse32bitindex(false),bHasDiffuse(false),uvCount(0) {}
+		SSubMesh():matName(""),skeletonName(""),bUse32bitindex(false),
+			bHasDiffuse(false),uvCount(0),bSkined(false),pSkeleton(nullptr) {}
+		~SSubMesh() { SAFE_DELETE(pSkeleton); }
 
 		std::string			matName;
+		std::string			skeletonName;
 		std::vector<SFace>	faces;
 		bool				bUse32bitindex;
 		bool				bHasDiffuse;
 		int					uvCount;
+		bool				bSkined;
+		ExpoSkeleton*		pSkeleton;
 	};
 
 public:

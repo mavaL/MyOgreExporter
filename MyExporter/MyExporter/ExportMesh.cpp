@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ExportMesh.h"
 #include "ExportMaterial.h"
+#include "MyExporter.h"
 
 
 ExpoMesh::ExpoMesh( IGameNode* node )
@@ -8,7 +9,9 @@ ExpoMesh::ExpoMesh( IGameNode* node )
 ,m_pNode(node)
 ,m_mesh(nullptr)
 {
-
+	m_name = "E:\\3ds Max 2010\\plugins\\";
+	m_name += m_pNode->GetName();
+	m_name += ".mesh.xml";
 }
 
 bool ExpoMesh::Export()
@@ -19,7 +22,20 @@ bool ExpoMesh::Export()
 	assert (pObject->GetIGameType() == IGameObject::IGAME_MESH);
 	m_mesh = (IGameMesh*) pObject;
 	
-	return _WriteMesh();
+	bool bSucceed = _WriteMesh();
+
+	//导出SubMesh的材质
+	MyExporter::GetSingleton().DoExport(eExpoType_Material, m_pNode);
+
+	//导出skeleton
+	if(m_subMesh.bSkined)
+		MyExporter::GetSingleton().DoExport(m_subMesh.pSkeleton);
+
+	//finished
+	m_pNode->ReleaseIGameObject();
+	m_mesh = nullptr;
+
+	return bSucceed;
 }
 
 bool ExpoMesh::_WriteMesh()
@@ -49,15 +65,9 @@ bool ExpoMesh::_WriteMesh()
 
 	_WriteSubmesh(m_subMesh, meshElem);
 
-	pXmlDoc->SaveFile("E:\\3ds Max 2010\\plugins\\object.mesh.xml");  
+	m_pNode->GetName();
+	pXmlDoc->SaveFile(m_name.c_str());  
 	delete pXmlDoc;
-
-	//导出SubMesh的材质
-	m_exporter->DoExport(eExpoType_Material, m_pNode);
-
-	//finished
-	m_pNode->ReleaseIGameObject();
-	m_mesh = nullptr;
 
 	return true;
 }
@@ -101,7 +111,7 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 	}
 
 	TiXmlElement* geometry = new TiXmlElement("geometry");  
-	submeshNode->LinkEndChild(geometry);  
+	submeshNode->LinkEndChild(geometry);
 
 	int nVert = nFace * 3;
 	geometry->SetAttribute("vertexcount", nVert);  
@@ -168,13 +178,25 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 		}
 	}
 
+	//skeleton link
+	if (m_subMesh.bSkined)
+	{
+		TiXmlElement* skelNode = new TiXmlElement("skeletonlink");  
+		meshElem->LinkEndChild(skelNode);
+
+		skelNode->SetAttribute("name", m_subMesh.skeletonName.c_str());
+	}
+
 	return true;
 }
 
 void ExpoMesh::_CollectInfo()
 {
+	ExpoConfig& config = ExpoConfig::GetSingleton();
 	Mesh* mesh = m_mesh->GetMaxMesh();
-	mesh->buildNormals();
+
+	if(config.m_bBuildNormal)
+		mesh->buildNormals();
 
 // 	//遍历所有面确定材质个数
 // 	std::set<int> matIds;
@@ -195,10 +217,23 @@ void ExpoMesh::_CollectInfo()
 	m_subMesh.bHasDiffuse = iDiffuseVert > 0;
 	m_subMesh.uvCount = texMap.Count();
 
+	//UV层等于1和大于1要分别处理,这是max的缺陷
 	if (texMap.Count() > 1) --m_subMesh.uvCount;
 
 	if(mtl) m_subMesh.matName = mtl->GetMaterialName();
-	else	m_subMesh.matName = ExpoMaterial::DEFAULT_MAT_NAME;
+	else	m_subMesh.matName = ExpoConfig::GetSingleton().m_defaultMaterialName;
+	
+	if(m_pNode->GetIGameObject()->IsObjectSkinned())
+	{
+		m_subMesh.pSkeleton = new ExpoSkeleton(m_pNode);
+
+		if (m_subMesh.pSkeleton->CollectInfo())
+		{
+			m_subMesh.bSkined = true;
+			m_subMesh.skeletonName = m_pNode->GetName();
+			m_subMesh.skeletonName += ".skeleton";
+		}
+	}
 
 	m_subMesh.faces.resize(iFaceCount);
 
@@ -208,9 +243,9 @@ void ExpoMesh::_CollectInfo()
 		FaceEx* pFace = m_mesh->GetFace(iFace);
 
 		for (int i = 0; i < 3; i++)
-		{  
+		{
 			//position  
-			face.vertexs[i].position = m_mesh->GetVertex(pFace->vert[i]);  
+			face.vertexs[i].position = m_mesh->GetVertex(pFace->vert[i]) * config.m_unitScale;
 			//diffuse 
 			face.vertexs[i].diffuse = m_mesh->GetColorVertex(pFace->vert[i]);
 			//alpha

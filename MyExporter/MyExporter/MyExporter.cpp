@@ -17,26 +17,25 @@
 #include "ExportDialog.h"
 #include "ExportMesh.h"
 #include "ExportMaterial.h"
+#include "ExportSkeleton.h"
 
 #define MyExporter_CLASS_ID	Class_ID(0x8b0c44de, 0x651b6a99)
 
-MyExporter g_MyExporter;
-
 __declspec( dllexport ) void InitExporter(Interface* ip,IUtil* iu)
 {
-	g_MyExporter.BeginEditParams(ip, iu);
+	MyExporter::GetSingleton().BeginEditParams(ip, iu);
 }
 
 __declspec( dllexport ) void DestroyExporter(Interface* ip,IUtil* iu)
 {
-	g_MyExporter.EndEditParams(ip, iu);
+	MyExporter::GetSingleton().EndEditParams(ip, iu);
 }
 
 class MyExporterClassDesc : public ClassDesc2 
 {
 public:
 	virtual int IsPublic() 							{ return TRUE; }
-	virtual void* Create(BOOL /*loading = FALSE*/) 	{ return &g_MyExporter; }
+	virtual void* Create(BOOL /*loading = FALSE*/) 	{ return MyExporter::GetSingletonPtr(); }
 	virtual const TCHAR *	ClassName() 			{ return GetString(IDS_CLASS_NAME); }
 	virtual SClass_ID SuperClassID() 				{ return UTILITY_CLASS_ID; }
 	virtual Class_ID ClassID() 						{ return MyExporter_CLASS_ID; }
@@ -62,7 +61,7 @@ MyExporter::MyExporter()
 	ip = nullptr;	
 	hPanel = nullptr;
 	pScene = nullptr;
-	dlgExpo = new ExpoDlg(this);
+	dlgExpo = new ExpoDlg;
 }
 
 MyExporter::~MyExporter()
@@ -92,28 +91,24 @@ void MyExporter::EndEditParams(Interface* ip,IUtil* iu)
 
 INT_PTR CALLBACK MyExporter::DlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	MyExporter& exporter = MyExporter::GetSingleton();
 	switch (msg) 
 	{
-		case WM_INITDIALOG:
-			g_MyExporter.Init(hWnd);
-			break;
-
-		case WM_DESTROY:
-			g_MyExporter.Destroy(hWnd);
-			break;
-
 		case WM_COMMAND:
 			{
 				if (LOWORD(wParam) == IDC_EnterExporter)
 					DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DlgExport), 
-					g_MyExporter.ip->GetMAXHWnd(), ExpoDlg::ExportDlgProc, (LPARAM)0);
+					exporter.ip->GetMAXHWnd(), ExpoDlg::ExportDlgProc, (LPARAM)0);
+				else if	(LOWORD(wParam) == IDC_Exporter_Options)
+					DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DlgExportConfig), 
+					exporter.ip->GetMAXHWnd(), ExpoConfig::DlgConfigProc, (LPARAM)0);
 			}
 			break;
 
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONUP:
 		case WM_MOUSEMOVE:
-			g_MyExporter.ip->RollupMouseMessage(hWnd,msg,wParam,lParam); 
+			exporter.ip->RollupMouseMessage(hWnd,msg,wParam,lParam); 
 			break;
 
 		default:
@@ -129,7 +124,7 @@ void MyExporter::Init(HWND hWnd)
 
 	//ogre坐标系
 	IGameConversionManager * cm = GetConversionManager();
-	cm->SetCoordSystem(IGameConversionManager::IGAME_OGL);
+	cm->SetCoordSystem(config.m_coordSystem);
 
 	if(!pScene->InitialiseIGame())
 		MessageBox(ip->GetMAXHWnd(), "InitialiseIGame() failed!", "Error", MB_ICONERROR);
@@ -140,27 +135,36 @@ void MyExporter::Init(HWND hWnd)
 		IGameNode* pRootNode = pScene->GetTopLevelNode(iRootNode);
 		m_rootNodes.push_back(pRootNode);
 	}
+
+	dlgExpo->Init(hWnd);
 }
 
 void MyExporter::Destroy(HWND hWnd)
 {
 	m_rootNodes.clear();
 	pScene->ReleaseIGame();
+	dlgExpo->Destroy();
 }
 
 void MyExporter::DoExport()
 {
 	if(m_rootNodes.size() > 1)
 	{
-		MessageBox(ip->GetMAXHWnd(), "Only support export one object now!", "Ogre exporter", MB_ICONINFORMATION);
+		dlgExpo->LogInfo("Only support export one object now!!!");
 		return;
 	}
+
+	//确定单位
+	int unitType;
+	float unitScale;
+	GetMasterUnitInfo(&unitType, &unitScale);
+	config.SetUnitSetup(unitType, unitScale);
 
 	if (!m_rootNodes.empty())
 		DoExport(eExpoType_Mesh, m_rootNodes[0]);
 }
 
-bool MyExporter::DoExport( eExpoType type, IGameNode* node )
+void MyExporter::DoExport( eExpoType type, IGameNode* node )
 {
 	ExpoObject* obj = nullptr;
 
@@ -168,13 +172,28 @@ bool MyExporter::DoExport( eExpoType type, IGameNode* node )
 	{
 	case eExpoType_Mesh:		obj = new ExpoMesh(node); break;
 	case eExpoType_Material:	obj = new ExpoMaterial(node); break;
-	default:					MessageBox(ip->GetMAXHWnd(), "Not support export type!", "Ogre exporter", MB_OK); return false;
+	case eExpoType_Skeleton:	obj = new ExpoSkeleton(node); break;
+	default:					dlgExpo->LogInfo("Not support export type!!!"); break;
 	}
 
-	obj->m_exporter = this;
-	bool ret = obj->Export();
+	DoExport(obj);
 
 	SAFE_DELETE(obj);
+}
 
-	return ret;
+void MyExporter::DoExport( ExpoObject* obj )
+{
+	std::string expoName("Exporting ");
+	expoName += obj->GetName();
+
+	if(obj->Export())
+	{
+		expoName += " succeed.";
+		dlgExpo->LogInfo(expoName);
+	}
+	else
+	{
+		expoName += " failed!!!";
+		dlgExpo->LogInfo(expoName);
+	}
 }

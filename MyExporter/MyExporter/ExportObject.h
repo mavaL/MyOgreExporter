@@ -8,8 +8,6 @@
 #ifndef ExportObject_h__
 #define ExportObject_h__
 
-#include "MyExporter.h"
-
 class IGameNode;
 class IGameMesh;
 
@@ -20,10 +18,11 @@ public:
 	virtual ~ExpoObject() {}
 
 public:
-	virtual bool	Export() = 0;
+	virtual bool		Export() = 0;
+	const std::string&	GetName() const { return m_name; }
 
-public:
-	MyExporter*		m_exporter;
+protected:
+	std::string			m_name;
 };
 
 #endif // ExportObject_h__

@@ -3,12 +3,12 @@
 #include "MyExporter.h"
 #include "resource.h"
 
-extern MyExporter g_MyExporter;
-
-ExpoDlg::ExpoDlg(MyExporter* expo)
-:m_pExpo(expo)
-,m_hwnd(nullptr)
+ExpoDlg::ExpoDlg()
+:m_hwnd(nullptr)
 ,m_hSceneInfo(nullptr)
+,m_expo(MyExporter::GetSingletonPtr())
+,m_hAnimList(nullptr)
+,m_hLog(nullptr)
 {
 
 }
@@ -18,7 +18,9 @@ HIMAGELIST hImageList = nullptr;
 void ExpoDlg::Init(HWND hwnd)
 {
 	m_hwnd = hwnd;
-	m_hSceneInfo = GetDlgItem(m_hwnd, IDC_Export_SceneInfo);
+	m_hSceneInfo	= GetDlgItem(m_hwnd, IDC_Export_SceneInfo);
+	m_hAnimList		= GetDlgItem(m_hwnd, IDC_Export_AnimList);
+	m_hLog			= GetDlgItem(m_hwnd, IDC_Export_Log);
 
 	hImageList = ImageList_Create(16,16,ILC_COLOR16,2,10);					  
 	HBITMAP hBitMap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_TREE));					  
@@ -28,9 +30,9 @@ void ExpoDlg::Init(HWND hwnd)
 
 	//显示MAX场景结构
 	TreeView_DeleteAllItems(m_hSceneInfo);
-	for (size_t iRootNode=0; iRootNode<m_pExpo->m_rootNodes.size(); ++iRootNode)
+	for (size_t iRootNode=0; iRootNode<m_expo->m_rootNodes.size(); ++iRootNode)
 	{
-		IGameNode* pRootNode = m_pExpo->m_rootNodes[iRootNode];
+		IGameNode* pRootNode = m_expo->m_rootNodes[iRootNode];
 		_InitSceneNodeInfo(pRootNode, nullptr);
 	}
 }
@@ -45,11 +47,11 @@ INT_PTR CALLBACK ExpoDlg::ExportDlgProc(HWND hWnd,UINT message,WPARAM wParam,LPA
 	switch (message) 
 	{
 	case WM_INITDIALOG:
-		g_MyExporter.dlgExpo->Init(hWnd);
+		MyExporter::GetSingleton().Init(hWnd);
 		break; 
 
 	case WM_DESTROY:
-		g_MyExporter.dlgExpo->Destroy();
+		MyExporter::GetSingleton().Destroy(hWnd);
 		break;
 
 	case WM_COMMAND:
@@ -57,7 +59,7 @@ INT_PTR CALLBACK ExpoDlg::ExportDlgProc(HWND hWnd,UINT message,WPARAM wParam,LPA
 			switch (LOWORD(wParam))
 			{
 			case IDC_Export_Cancel: EndDialog(hWnd, 0); break;
-			case IDC_Export_Start:	g_MyExporter.DoExport(); break;
+			case IDC_Export_Start:	MyExporter::GetSingleton().DoExport(); break;
 			default: break;
 			}
 		}
@@ -87,4 +89,12 @@ void ExpoDlg::_InitSceneNodeInfo( IGameNode* pNode, HTREEITEM hParent )
 	//children
 	for (int iChild=0; iChild<pNode->GetChildCount(); ++iChild)
 		_InitSceneNodeInfo(pNode->GetNodeChild(iChild), hParent);
+}
+
+void ExpoDlg::LogInfo( const std::string& info )
+{
+	std::string line = info + "\r\n";
+	//插入一行
+	Edit_SetSel(m_hLog, -1, -1);
+	Edit_ReplaceSel(m_hLog, line.c_str());
 }

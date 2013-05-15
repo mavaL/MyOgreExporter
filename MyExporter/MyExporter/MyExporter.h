@@ -20,19 +20,45 @@
 #include "istdplug.h"
 #include "iparamb2.h"
 #include "iparamm2.h"
-//SIMPLE TYPE
-
 #include "utilapi.h"
+
+#include "ExportConfig.h"
+#include "Singleton.h"
 
 enum eExpoType
 {
 	eExpoType_Mesh,
-	eExpoType_Material
+	eExpoType_Material,
+	eExpoType_Skeleton
 };
 
-class MyExporter : public UtilityObj 
+class ExpoObject;
+
+//////////////////////////////////////////////////////////////////////////
+class MyExporter 
+	: public UtilityObj
+	, public CSingleton<MyExporter>
+	, public SceneExport
 {
 	friend class ExpoDlg;
+	DECLEAR_SINGLETON(MyExporter)
+
+public:
+	//////////////////////////////////////////////////////////////////////
+	///////	SceneExport的接口,我们并不用SceneExport的方式,而是UtilityObject,
+	//////	用SceneExport是为了能调GetMasterUnitInfo这个函数...
+	virtual int				ExtCount()			{ return 0; }
+	virtual const MCHAR *	Ext(int n)			{ return "No Use!"; }
+	virtual const MCHAR *	LongDesc()			{ return "No Use!"; }
+	virtual const MCHAR *	ShortDesc()			{ return "No Use!"; }
+	virtual const MCHAR *	AuthorName()		{ return "No Use!"; }
+	virtual const MCHAR *	CopyrightMessage()	{ return "No Use!"; }
+	virtual const MCHAR *	OtherMessage1()		{ return "No Use!"; }
+	virtual const MCHAR *	OtherMessage2()		{ return "No Use!"; }
+	virtual unsigned int	Version()			{ return 0; }
+	virtual void			ShowAbout(HWND hWnd)	{}
+	virtual int				DoExport(const MCHAR *name,ExpInterface *ei,Interface *i, BOOL suppressPrompts=FALSE, DWORD options=0) { return 0; }
+
 public:
 	//Constructor/Destructor
 	MyExporter();
@@ -47,7 +73,8 @@ public:
 	virtual void Destroy(HWND hWnd);
 
 	void		 DoExport();
-	bool		 DoExport(eExpoType type, IGameNode* node);
+	void		 DoExport(eExpoType type, IGameNode* node);
+	void		 DoExport(ExpoObject* obj);
 
 public:
 	HWND				hPanel;
@@ -55,6 +82,7 @@ public:
 	Interface*			ip;
 	IUtil*				iu;
 	ExpoDlg*			dlgExpo;
+	ExpoConfig			config;
 
 private:
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

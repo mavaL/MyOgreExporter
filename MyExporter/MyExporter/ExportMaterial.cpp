@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "ExportMaterial.h"
-
-
-std::string ExpoMaterial::DEFAULT_MAT_NAME = "MaxDefault";
+#include "MyExporter.h"
 
 ExpoMaterial::ExpoMaterial( IGameNode* node )
 :m_stream("")
@@ -10,6 +8,10 @@ ExpoMaterial::ExpoMaterial( IGameNode* node )
 {
 	m_material = m_node->GetNodeMaterial();
 	assert(m_node->GetIGameObject()->GetIGameType() == IGameObject::IGAME_MESH && "Construct ExpoMaterial with IGameMesh!");
+
+	m_name = "E:\\3ds Max 2010\\plugins\\";
+	m_name += m_node->GetName();
+	m_name += ".material";
 }
 
 bool ExpoMaterial::Export()
@@ -17,7 +19,7 @@ bool ExpoMaterial::Export()
 	_CollectInfo();
 
 	std::ofstream materialFile;
-	materialFile.open("E:\\3ds Max 2010\\plugins\\object.material", std::ios::out);
+	materialFile.open(m_name.c_str(), std::ios::out);
 
 	if (!materialFile.is_open())
 		return false;
@@ -32,7 +34,7 @@ bool ExpoMaterial::Export()
 void ExpoMaterial::_CollectInfo()
 {
 	std::stringstream of;
-	std::string matName = m_material ? m_material->GetMaterialName() : DEFAULT_MAT_NAME;
+	std::string matName = m_material ? m_material->GetMaterialName() : MyExporter::GetSingleton().config.m_defaultMaterialName;
 	
 	of << "material " << matName << std::endl;
 	of << std::showpoint;

@@ -470,7 +470,7 @@
       <AdditionalOptions>/LD %40"E:\Autodesk\3ds Max 2010 SDK\ProjectSettings\AdditionalCompilerOptions.txt" %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>.\;.\midl\Win32;E:\Autodesk\3ds Max 2010 SDK\include;E:\Autodesk\3ds Max 2010 SDK\include\IGame;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;.\midl\Win32;E:\Autodesk\3ds Max 2010 SDK\include;E:\Autodesk\3ds Max 2010 SDK\include\CS;E:\Autodesk\3ds Max 2010 SDK\include\IGame;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;ISOLATION_AWARE_ENABLED=1;MODULE_NAME=$(TargetFileName);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -495,7 +495,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalOptions>  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;bmm.lib;core.lib;geom.lib;gfx.lib;mesh.lib;maxutil.lib;maxscrpt.lib;gup.lib;paramblk2.lib;igame.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;bmm.lib;core.lib;geom.lib;gfx.lib;mesh.lib;maxutil.lib;maxscrpt.lib;gup.lib;paramblk2.lib;igame.lib;biped.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>E:\Autodesk\3ds Max 2010 SDK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -888,10 +888,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ExportConfig.cpp" />
     <ClCompile Include="ExportDialog.cpp" />
     <ClCompile Include="ExportMaterial.cpp" />
     <ClCompile Include="ExportMesh.cpp" />
     <ClCompile Include="ExportObject.cpp" />
+    <ClCompile Include="ExportSkeleton.cpp" />
     <ClCompile Include="MyExporter.cpp" />
     <ClCompile Include="DllEntry.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -909,21 +911,26 @@
     <ClCompile Include="tinyxml\tinyxmlparser.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="MyExporter.def" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3dsmaxsdk_preinclude.h" />
+    <ClInclude Include="ExportConfig.h" />
     <ClInclude Include="ExportDialog.h" />
     <ClInclude Include="ExportMaterial.h" />
     <ClInclude Include="ExportMesh.h" />
     <ClInclude Include="ExportObject.h" />
+    <ClInclude Include="ExportSkeleton.h" />
     <ClInclude Include="MyExporter.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Singleton.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="tinyxml\tinystr.h" />
     <ClInclude Include="tinyxml\tinyxml.h" />
+    <ClInclude Include="Utility.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MyExporter.rc" />

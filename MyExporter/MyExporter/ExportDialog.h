@@ -13,21 +13,24 @@ class MyExporter;
 class ExpoDlg
 {
 public:
-	ExpoDlg(MyExporter* expo);
+	ExpoDlg();
 
 public:
 	static INT_PTR CALLBACK ExportDlgProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
 
 	void		Init(HWND hwnd);
 	void		Destroy();
+	void		LogInfo(const std::string& info);
 
 private:
 	void		_InitSceneNodeInfo(IGameNode* pNode, HTREEITEM hParent);
 
 private:
+	MyExporter*	m_expo;
 	HWND		m_hwnd;
-	MyExporter*	m_pExpo;
 	HWND		m_hSceneInfo;
+	HWND		m_hAnimList;
+	HWND		m_hLog;
 };
 
 #endif // ExportDialog_h__

@@ -2,6 +2,7 @@
 
 #include <assert.h>
 
+//3DXI
 #include "IGame.h"
 #include "IGameObject.h"
 #include "IGameProperty.h"
@@ -10,6 +11,9 @@
 #include "IConversionManager.h"
 #include "IGameError.h"
 #include "IGameFX.h"
+
+//CS
+#include "BipedApi.h"
 
 #include <tinyxml/tinystr.h>
 #include <tinyxml/tinyxml.h>

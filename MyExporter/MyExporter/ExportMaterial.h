@@ -18,8 +18,6 @@ public:
 public:
 	virtual bool	Export();
 
-	static	std::string	DEFAULT_MAT_NAME;
-
 private:
 	void			_CollectInfo();
 	bool			_StreamPass(std::ostream &of, IGameMaterial *mtl);

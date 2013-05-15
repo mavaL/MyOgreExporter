@@ -2,7 +2,7 @@
 #include "ExportObject.h"
 
 ExpoObject::ExpoObject()
-:m_exporter(nullptr)
+:m_name("")
 {
 
 }
