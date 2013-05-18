@@ -7,7 +7,7 @@ ExpoConfig::ExpoConfig()
 {
 	m_bUnitMeter			=	false;
 	m_unitScale				=	1.0f;
-	m_bBuildNormal			=	false;
+	m_bBuildNormal			=	true;
 	m_defaultMaterialName	=	"DefaultMaterial";
 	m_coordSystem			=	IGameConversionManager::IGAME_OGL;
 }
@@ -57,6 +57,9 @@ INT_PTR CALLBACK ExpoConfig::DlgConfigProc( HWND hWnd,UINT message,WPARAM wParam
 
 void ExpoConfig::SetUnitSetup( int unitType, float unitScale )
 {
+	if(!m_bUnitMeter)
+		return;
+
 	// Units conversion
 	const float MM2M = 0.001f;
 	const float CM2M = 0.01f;

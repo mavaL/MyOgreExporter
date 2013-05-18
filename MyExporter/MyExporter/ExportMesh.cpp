@@ -2,6 +2,7 @@
 #include "ExportMesh.h"
 #include "ExportMaterial.h"
 #include "MyExporter.h"
+#include "ExportConfig.h"
 
 
 ExpoMesh::ExpoMesh( IGameNode* node )
@@ -65,7 +66,6 @@ bool ExpoMesh::_WriteMesh()
 
 	_WriteSubmesh(m_subMesh, meshElem);
 
-	m_pNode->GetName();
 	pXmlDoc->SaveFile(m_name.c_str());  
 	delete pXmlDoc;
 
@@ -81,9 +81,8 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 	meshElem->LinkEndChild(submeshes);
 
 	// <submeshNode> </submeshNode>  
-	TiXmlElement* submeshNode = new TiXmlElement("submeshNode");  
+	TiXmlElement* submeshNode = new TiXmlElement("submesh");
 	submeshes->LinkEndChild(submeshNode);
- 
 	submeshNode->SetAttribute("material", subMesh.matName.c_str());  
 	submeshNode->SetAttribute("usesharedvertices", "false");  
 	submeshNode->SetAttribute("use32bitindexes", subMesh.bUse32bitindex ? "true" : "false");
@@ -102,23 +101,21 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 		TiXmlElement* face = new TiXmlElement("face");  
 		faces->LinkEndChild(face);  
 
+		const unsigned int* indexes = subMesh.faces[iFace].vertexs;
 		for (int i = 0; i < 3; i++)
 		{  
 			memset(stub, 0, 128);  
-			sprintf (stub, "v%d", i+1);  
-			face->SetAttribute(stub, iFace * 3 + i);  
+			sprintf (stub, "v%d", i + 1);  
+			face->SetAttribute(stub, indexes[i]);  
 		}  
 	}
 
 	TiXmlElement* geometry = new TiXmlElement("geometry");  
 	submeshNode->LinkEndChild(geometry);
-
-	int nVert = nFace * 3;
-	geometry->SetAttribute("vertexcount", nVert);  
+	geometry->SetAttribute("vertexcount", subMesh.vertexList.size());  
 
 	TiXmlElement* vertexbuffer = new TiXmlElement("vertexbuffer");  
-	geometry->LinkEndChild(vertexbuffer);  
-
+	geometry->LinkEndChild(vertexbuffer);
 	vertexbuffer->SetAttribute("positions", "true");  
 	vertexbuffer->SetAttribute("normals", "true");  
 	vertexbuffer->SetAttribute("colours_diffuse", subMesh.bHasDiffuse ? "true" : "false");  
@@ -131,50 +128,44 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 		vertexbuffer->SetAttribute(stub, "float2");  
 	}  
  
-	for (int iFace=0; iFace<nFace; iFace++)
+	for (size_t iVert=0; iVert<subMesh.vertexList.size(); ++iVert)
 	{  
-		for (int i = 0; i < 3; i++)
+		const SVertex& vertex = subMesh.vertexList[iVert];
+
+		TiXmlElement* vertNode = new TiXmlElement("vertex");  
+		vertexbuffer->LinkEndChild(vertNode);  
+
+		//position  
+		TiXmlElement* position = new TiXmlElement("position");  
+		vertNode->LinkEndChild(position);  
+		position->SetDoubleAttribute("x", vertex.position.x);  
+		position->SetDoubleAttribute("y", vertex.position.y);  
+		position->SetDoubleAttribute("z", vertex.position.z);  
+
+		//diffuse  
+		TiXmlElement* colour_diffuse = new TiXmlElement("colour_diffuse");  
+		vertNode->LinkEndChild(colour_diffuse);  
+
+		memset(stub, 0, 128);  
+		sprintf(stub, "    %f    %f    %f", vertex.diffuse.x, vertex.diffuse.y, vertex.diffuse.z);  
+		colour_diffuse->SetAttribute("value", stub);  
+
+		//normal
+		TiXmlElement* normal = new TiXmlElement("normal");  
+		vertNode->LinkEndChild(normal);  
+		normal->SetDoubleAttribute("x", vertex.normal.x);
+		normal->SetDoubleAttribute("y", vertex.normal.y);
+		normal->SetDoubleAttribute("z", vertex.normal.z);
+
+		//uv
+		for (int ti=0; ti<subMesh.uvCount; ti++) 
 		{
-			const SVertex& vertex = subMesh.faces[iFace].vertexs[i];
+			const Point3& uvw = vertex.uv[ti];
 
-			TiXmlElement* vertNode = new TiXmlElement("vertex");  
-			vertexbuffer->LinkEndChild(vertNode);  
-
-			//position  
-			TiXmlElement* position = new TiXmlElement("position");  
-			vertNode->LinkEndChild(position);  
-
-			position->SetDoubleAttribute("x", vertex.position.x);  
-			position->SetDoubleAttribute("y", vertex.position.y);  
-			position->SetDoubleAttribute("z", vertex.position.z);  
-
-			//diffuse  
-			TiXmlElement* colour_diffuse = new TiXmlElement("colour_diffuse");  
-			vertNode->LinkEndChild(colour_diffuse);  
-
-			memset(stub, 0, 128);  
-			sprintf(stub, "    %f    %f    %f", vertex.diffuse.x, vertex.diffuse.y, vertex.diffuse.z);  
-			colour_diffuse->SetAttribute("value", stub);  
-
-			//normal
-			TiXmlElement* normal = new TiXmlElement("normal");  
-			vertNode->LinkEndChild(normal);  
-
-			normal->SetDoubleAttribute("x", vertex.normal.x);
-			normal->SetDoubleAttribute("y", vertex.normal.y);
-			normal->SetDoubleAttribute("z", vertex.normal.z);
-
-			//uv
-			for (int ti=0; ti<subMesh.uvCount; ti++) 
-			{
-				const Point3& uvw = vertex.uv[ti];
-
-				TiXmlElement* uvNode = new TiXmlElement("texcoord");  
-				vertNode->LinkEndChild(uvNode);  
-
-				uvNode->SetDoubleAttribute("u", uvw.x);
-				uvNode->SetDoubleAttribute("v", 1.0 - uvw.y);
-			}
+			TiXmlElement* uvNode = new TiXmlElement("texcoord");  
+			vertNode->LinkEndChild(uvNode);  
+			uvNode->SetDoubleAttribute("u", uvw.x);
+			uvNode->SetDoubleAttribute("v", 1.0 - uvw.y);
 		}
 	}
 
@@ -183,7 +174,6 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 	{
 		TiXmlElement* skelNode = new TiXmlElement("skeletonlink");  
 		meshElem->LinkEndChild(skelNode);
-
 		skelNode->SetAttribute("name", m_subMesh.skeletonName.c_str());
 	}
 
@@ -192,20 +182,10 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 
 void ExpoMesh::_CollectInfo()
 {
-	ExpoConfig& config = ExpoConfig::GetSingleton();
 	Mesh* mesh = m_mesh->GetMaxMesh();
 
-	if(config.m_bBuildNormal)
+	if(CONFIG.m_bBuildNormal)
 		mesh->buildNormals();
-
-// 	//遍历所有面确定材质个数
-// 	std::set<int> matIds;
-// 	int nFaces = m_mesh->GetNumberOfFaces();
-// 	for (int iFace=0; iFace<nFaces; ++iFace)
-// 	{
-// 		FaceEx* pFace = m_mesh->GetFace(iFace);
-// 		matIds.insert(pFace->matID);
-// 	}
 
 	int iVertexCount	= m_mesh->GetNumberOfVerts();  
 	int iFaceCount		= m_mesh->GetNumberOfFaces();
@@ -237,6 +217,7 @@ void ExpoMesh::_CollectInfo()
 
 	m_subMesh.faces.resize(iFaceCount);
 
+	auto& verts = m_subMesh.vertexList;
 	for (int iFace=0; iFace<iFaceCount; ++iFace)
 	{
 		SFace& face = m_subMesh.faces[iFace];
@@ -244,28 +225,64 @@ void ExpoMesh::_CollectInfo()
 
 		for (int i = 0; i < 3; i++)
 		{
-			//position  
-			face.vertexs[i].position = m_mesh->GetVertex(pFace->vert[i]) * config.m_unitScale;
-			//diffuse 
-			face.vertexs[i].diffuse = m_mesh->GetColorVertex(pFace->vert[i]);
-			//alpha
-			face.vertexs[i].alpha = m_mesh->GetAlphaVertex(pFace->vert[i]);  
-			//normal
-			face.vertexs[i].normal = m_mesh->GetNormal(pFace, i);
-
-			//uv
-			int ch = m_subMesh.uvCount > 1 ? 1 : 0;
-			for (; ch < texMap.Count(); ch++)
+			size_t duplicateVertIdx = verts.size();
+			bool bDuplicate = false;
+			//检测是否有坐标相同顶点(做合并)
+			Point3 pos = m_mesh->GetVertex(pFace->vert[i]) * CONFIG.m_unitScale;
+			for (size_t iVert=0; iVert<verts.size(); ++iVert)
 			{
-				DWORD idx[3];
-				Point3 tv;
+				if (verts[iVert].position == pos)
+				{
+					duplicateVertIdx = iVert;
+					bDuplicate = true;
+					break;
+				}
+			}
 
-				if (m_mesh->GetMapFaceIndex(texMap[ch], iFace, idx))  
-					tv = m_mesh->GetMapVertex(texMap[ch], idx[i]);  
-				else  
-					tv = m_mesh->GetMapVertex(texMap[ch], pFace->vert[i]);  
+			SVertex newVertex;
 
-				face.vertexs[i].uv.push_back(Point3(tv.x, tv.y, tv.z));
+			if (bDuplicate)
+			{
+				face.vertexs[i] = duplicateVertIdx;
+			}	
+			else
+			{
+				DWORD index = pFace->vert[i];
+				auto iter = m_subMesh.indexmap.find(index);
+				if (iter == m_subMesh.indexmap.end())
+				{
+					//position  
+					newVertex.position = pos;
+					//diffuse 
+					newVertex.diffuse = m_mesh->GetColorVertex(index);
+					//alpha
+					newVertex.alpha = m_mesh->GetAlphaVertex(index);  
+					//normal
+					newVertex.normal = m_mesh->GetNormal(pFace, i);
+
+					//uv
+					int ch = m_subMesh.uvCount > 1 ? 1 : 0;
+					for (; ch < texMap.Count(); ch++)
+					{
+						DWORD idx[3];
+						Point3 tv;
+
+						if (m_mesh->GetMapFaceIndex(texMap[ch], iFace, idx))  
+							tv = m_mesh->GetMapVertex(texMap[ch], idx[i]);  
+						else  
+							tv = m_mesh->GetMapVertex(texMap[ch], index);  
+
+						newVertex.uv.push_back(Point3(tv.x, tv.y, tv.z));
+					}
+
+					verts.push_back(newVertex);
+					face.vertexs[i] = verts.size() - 1;
+					m_subMesh.indexmap.insert(std::make_pair(index, verts.size() - 1));
+				}
+				else
+				{
+					face.vertexs[i] = iter->second;
+				}
 			}
 		}  
 	}

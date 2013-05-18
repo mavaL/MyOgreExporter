@@ -14,28 +14,29 @@ class ExpoSkeleton : public ExpoObject
 {
 	struct SJoint 
 	{
-		SJoint():name(""),boneHandle(-1),parentHandle(-1),
+		SJoint():name(""),boneHandle(-1),parent(nullptr),
 			position(-1,-1,-1),rotation(0.0f,0.0f,0.0f,1.0f),scale(1,1,1) {}
 
+		SJoint*		parent;
 		std::string	name;
 		int			boneHandle;
-		int			parentHandle;
 		Point3		position;
 		Quat		rotation;
 		Point3		scale;
 	};
-	typedef std::vector<SJoint> JointList;
+	typedef std::vector<SJoint*> JointList;
 
 public:
 	ExpoSkeleton(IGameNode* node);
+	~ExpoSkeleton();
 
 public:
 	virtual bool	Export();
 	bool			CollectInfo();
 
 private:
-	bool			_LoadJoint(INode* pJoint);
-	SJoint*			_GetJoint(INode* pJoint);
+	bool			_LoadJoint(IGameNode* pJoint, SJoint* parent);
+	SJoint*			_GetJoint(IGameNode* pJoint);
 
 private:
 	IGameNode*		m_node;

@@ -15,6 +15,7 @@
 #include "MyExporter.h"
 #include "resource.h"
 #include "ExportDialog.h"
+#include "ExportConfig.h"
 #include "ExportMesh.h"
 #include "ExportMaterial.h"
 #include "ExportSkeleton.h"
@@ -124,7 +125,7 @@ void MyExporter::Init(HWND hWnd)
 
 	//ogre坐标系
 	IGameConversionManager * cm = GetConversionManager();
-	cm->SetCoordSystem(config.m_coordSystem);
+	cm->SetCoordSystem(CONFIG.m_coordSystem);
 
 	if(!pScene->InitialiseIGame())
 		MessageBox(ip->GetMAXHWnd(), "InitialiseIGame() failed!", "Error", MB_ICONERROR);
@@ -148,20 +149,17 @@ void MyExporter::Destroy(HWND hWnd)
 
 void MyExporter::DoExport()
 {
-	if(m_rootNodes.size() > 1)
-	{
-		dlgExpo->LogInfo("Only support export one object now!!!");
-		return;
-	}
-
 	//确定单位
 	int unitType;
 	float unitScale;
 	GetMasterUnitInfo(&unitType, &unitScale);
-	config.SetUnitSetup(unitType, unitScale);
+	CONFIG.SetUnitSetup(unitType, unitScale);
 
-	if (!m_rootNodes.empty())
-		DoExport(eExpoType_Mesh, m_rootNodes[0]);
+	for (size_t i=0; i<m_rootNodes.size(); ++i)
+	{
+		if(m_rootNodes[i]->GetIGameObject()->GetIGameType() == IGameObject::IGAME_MESH)
+			DoExport(eExpoType_Mesh, m_rootNodes[i]);
+	}
 }
 
 void MyExporter::DoExport( eExpoType type, IGameNode* node )

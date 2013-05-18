@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ExportMaterial.h"
 #include "MyExporter.h"
+#include "ExportConfig.h"
 
 ExpoMaterial::ExpoMaterial( IGameNode* node )
 :m_stream("")
@@ -34,7 +35,7 @@ bool ExpoMaterial::Export()
 void ExpoMaterial::_CollectInfo()
 {
 	std::stringstream of;
-	std::string matName = m_material ? m_material->GetMaterialName() : MyExporter::GetSingleton().config.m_defaultMaterialName;
+	std::string matName = m_material ? m_material->GetMaterialName() : CONFIG.m_defaultMaterialName;
 	
 	of << "material " << matName << std::endl;
 	of << std::showpoint;

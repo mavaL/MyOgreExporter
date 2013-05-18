@@ -3,19 +3,16 @@
 
 namespace Utility
 {
-	Matrix3 GetWorldTransform( INode* pNode, int time )
+	GMatrix GetLocalTransform( IGameNode* from, IGameNode* to, TimeValue t )
 	{
-		return pNode->GetNodeTM(time);
-	}
-
-	Matrix3 GetLocalTransform( INode* pNode, int time )
-	{
-		Matrix3 worldTM = pNode->GetNodeTM(time);
-
-		if(pNode->GetParentNode()->IsRootNode())
-			return worldTM;
-
-		return worldTM * Inverse(pNode->GetParentNode()->GetNodeTM(time));
+		if(!from && !to)
+			return GMatrix();
+		else if(!from)
+			return to->GetWorldTM(t).Inverse();
+		else if(!to)
+			return from->GetWorldTM(t);
+		else
+			return from->GetWorldTM(t) * to->GetWorldTM(t).Inverse();
 	}
 
 }

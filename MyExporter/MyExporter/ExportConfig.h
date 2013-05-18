@@ -29,4 +29,6 @@ public:
 	IGameConversionManager::CoordSystem	m_coordSystem;	//导出坐标系
 };
 
+#define CONFIG		ExpoConfig::GetSingleton()
+
 #endif // ExportConfig_h__

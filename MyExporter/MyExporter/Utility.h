@@ -10,8 +10,7 @@
 
 namespace Utility
 {
-	Matrix3		GetWorldTransform(INode* pNode, int time = 0);
-	Matrix3		GetLocalTransform(INode* pNode, int time = 0);
+	GMatrix		GetLocalTransform(IGameNode* from, IGameNode* to, TimeValue t=TIME_NegInfinity);
 }
 
 #endif // Utility_h__
