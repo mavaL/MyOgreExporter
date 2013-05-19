@@ -169,9 +169,28 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 		}
 	}
 
-	//skeleton link
 	if (m_subMesh.bSkined)
 	{
+		//bone assignments
+ 		auto& vertAssigns = m_subMesh.pSkeleton->GetVertexAssigns();
+		TiXmlElement* boneassignments = new TiXmlElement("boneassignments");  
+		submeshNode->LinkEndChild(boneassignments);
+
+		for (auto itAssign=vertAssigns.begin(); itAssign!=vertAssigns.end(); ++itAssign)
+		{
+			const ExpoSkeleton::SVertexAssignment& assign = itAssign->second;
+			const auto& weightMap = assign.weights;
+			for (auto itWt=weightMap.begin(); itWt!=weightMap.end(); ++itWt)
+			{
+				TiXmlElement* assignNode = new TiXmlElement("vertexboneassignment");  
+				boneassignments->LinkEndChild(assignNode);
+				assignNode->SetAttribute("vertexindex", itAssign->first);
+				assignNode->SetAttribute("boneindex", itWt->first);
+				assignNode->SetDoubleAttribute("weight", itWt->second);
+			}
+		}
+
+		//skeleton link
 		TiXmlElement* skelNode = new TiXmlElement("skeletonlink");  
 		meshElem->LinkEndChild(skelNode);
 		skelNode->SetAttribute("name", m_subMesh.skeletonName.c_str());
@@ -203,20 +222,9 @@ void ExpoMesh::_CollectInfo()
 	if(mtl) m_subMesh.matName = mtl->GetMaterialName();
 	else	m_subMesh.matName = ExpoConfig::GetSingleton().m_defaultMaterialName;
 	
-	if(m_pNode->GetIGameObject()->IsObjectSkinned())
-	{
-		m_subMesh.pSkeleton = new ExpoSkeleton(m_pNode);
-
-		if (m_subMesh.pSkeleton->CollectInfo())
-		{
-			m_subMesh.bSkined = true;
-			m_subMesh.skeletonName = m_pNode->GetName();
-			m_subMesh.skeletonName += ".skeleton";
-		}
-	}
-
 	m_subMesh.faces.resize(iFaceCount);
 
+	//收集顶点信息
 	auto& verts = m_subMesh.vertexList;
 	for (int iFace=0; iFace<iFaceCount; ++iFace)
 	{
@@ -286,6 +294,19 @@ void ExpoMesh::_CollectInfo()
 				m_subMesh.posIdxMap[pos].push_back(index);
 			}
 		}  
+	}
+
+	//收集骨骼信息
+	if(m_pNode->GetIGameObject()->IsObjectSkinned())
+	{
+		m_subMesh.pSkeleton = new ExpoSkeleton(m_pNode);
+
+		if (m_subMesh.pSkeleton->CollectInfo(this))
+		{
+			m_subMesh.bSkined = true;
+			m_subMesh.skeletonName = m_pNode->GetName();
+			m_subMesh.skeletonName += ".skeleton";
+		}
 	}
 }
 

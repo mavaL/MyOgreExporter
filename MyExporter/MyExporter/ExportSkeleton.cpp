@@ -3,6 +3,7 @@
 #include "MyExporter.h"
 #include "ExportDialog.h"
 #include "Utility.h"
+#include "ExportMesh.h"
 
 ExpoSkeleton::ExpoSkeleton( IGameNode* node )
 :m_node(node)
@@ -45,7 +46,7 @@ bool ExpoSkeleton::Export()
 
 		TiXmlElement* jointNode = new TiXmlElement("bone");  
 		bones->LinkEndChild(jointNode);
-		jointNode->SetAttribute("id", joint->boneHandle);
+		jointNode->SetAttribute("id", joint->boneID);
 		jointNode->SetAttribute("name", joint->name.c_str());
 
 		//position  
@@ -95,7 +96,7 @@ bool ExpoSkeleton::Export()
 	return true;
 }
 
-bool ExpoSkeleton::CollectInfo()
+bool ExpoSkeleton::CollectInfo(ExpoMesh* parent)
 {
 	MyExporter& exporter = MyExporter::GetSingleton();
 	m_skin = m_node->GetIGameObject()->GetIGameSkin();
@@ -127,6 +128,61 @@ bool ExpoSkeleton::CollectInfo()
 		IGameNode* pRootBone = vecRootBones[iBone];
 		if(!_LoadJoint(pRootBone, nullptr))
 			return false;
+	}
+
+	//蒙皮信息
+	IGameMesh* mesh = dynamic_cast<IGameMesh*>(m_node->GetIGameObject());
+	int numSkinedVert = m_skin->GetNumOfSkinnedVerts();
+
+	if(numSkinedVert < mesh->GetNumberOfVerts())
+	{
+		exporter.dlgExpo->LogInfo("Error: There are some vertexs not get skinned!!!");
+		return false;
+	}
+
+	//以三角面来进行遍历,因为我们想获取每个蒙皮顶点的顶点索引
+	auto& indexMap = parent->GetIndexMap();
+	int iFaceCount = mesh->GetNumberOfFaces();
+	for (int iFace=0; iFace<iFaceCount; ++iFace)
+	{
+		FaceEx* pFace = mesh->GetFace(iFace);
+		for (int i = 0; i < 3; i++)
+		{
+			DWORD vertexIndex = pFace->vert[i];
+			IGameSkin::VertexType type = m_skin->GetVertexType(pFace->vert[i]);
+			auto& weightMap = m_vertAssigns[indexMap[pFace->vert[i]]].weights;
+
+			if (type == IGameSkin::IGAME_RIGID)		//角色头部可能是这种类型
+			{
+				IGameNode* pBoneNode = m_skin->GetIGameBone(vertexIndex, 0);
+				const SJoint* joint = _GetJoint(pBoneNode);
+
+				if(weightMap.find(joint->boneID) == weightMap.end())
+					weightMap.insert(std::make_pair(joint->boneID, 1.0f));	//rigid weight, no blend
+			}
+			else if (type == IGameSkin::IGAME_RIGID_BLENDED)	//正常多骨骼混合类型
+			{
+				int numWeights = m_skin->GetNumberOfBones(vertexIndex);
+				for(int iWt=0; iWt<numWeights; ++iWt)
+				{
+					IGameNode* pBoneNode = m_skin->GetIGameBone(vertexIndex, iWt);
+					float weight = m_skin->GetWeight(vertexIndex, iWt);
+					const SJoint* joint = _GetJoint(pBoneNode);
+
+					if(weightMap.find(joint->boneID) == weightMap.end())
+						weightMap.insert(std::make_pair(joint->boneID, weight));
+				}
+
+				if(numWeights > 4)
+				{
+					exporter.dlgExpo->LogInfo("Warning: There are some vertexs skinned with more than 4 bones!!!");
+				}
+			}
+			else
+			{
+				exporter.dlgExpo->LogInfo("Warning: Unknown vertex skin type!!!");
+			}
+		}
 	}
 
 	return true;
@@ -187,6 +243,9 @@ bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 	joint->rotation.Set(rot);
 
 	m_joints.push_back(joint);
+
+	//bone id
+	joint->boneID = m_joints.size() - 1;
 
 	//children
 	for (int iChild=0; iChild<pJoint->GetChildCount(); ++iChild)

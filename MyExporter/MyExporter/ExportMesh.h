@@ -32,6 +32,7 @@ namespace std
 
 class ExpoMesh : public ExpoObject
 {
+public:
 	typedef std::vector<Point3>	VecUV;
 	typedef std::unordered_map<unsigned int, unsigned int>	IndexRemap;
 	typedef std::unordered_map<Point3, std::vector<unsigned int>>	PosIndexMap;
@@ -74,6 +75,7 @@ public:
 
 public:
 	virtual bool	Export();
+	IndexRemap& GetIndexMap() { return m_subMesh.indexmap; }
 
 private:
 	void		_CollectInfo();

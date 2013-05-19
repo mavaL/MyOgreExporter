@@ -5,10 +5,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyExporter", "MyExporter\My
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PluginWrapper", "PluginWrapper\PluginWrapper.vcxproj", "{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OgreMaxExporter", "..\..\Ogre_1_8_0\ogre_src_v1-8-0\Tools\3dsmaxExport\OgreExport\scripts\OgreMaxExporter.vcxproj", "{FA3803CF-6433-4959-9517-8EC505C5D919}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IGameExporter", "E:\Autodesk\3ds Max 2010 SDK\samples\igame\export\IGameExporter.vcxproj", "{0A852E24-4C6E-4546-87BE-CBF8D950AED7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -73,48 +69,6 @@ Global
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.ReleaseUnicode|Win32.Build.0 = ReleaseUnicode|Win32
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.ReleaseUnicode|x64.ActiveCfg = ReleaseUnicode|x64
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.ReleaseUnicode|x64.Build.0 = ReleaseUnicode|x64
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Debug|Win32.ActiveCfg = Debug|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Debug|Win32.Build.0 = Debug|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Debug|x64.ActiveCfg = Debug|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.DebugUnicode|Win32.ActiveCfg = Debug|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.DebugUnicode|Win32.Build.0 = Debug|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.DebugUnicode|x64.ActiveCfg = Debug|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Hybrid|Win32.ActiveCfg = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Hybrid|Win32.Build.0 = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Hybrid|x64.ActiveCfg = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.HybridUnicode|Win32.ActiveCfg = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.HybridUnicode|Win32.Build.0 = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.HybridUnicode|x64.ActiveCfg = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Release|Win32.ActiveCfg = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Release|Win32.Build.0 = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.Release|x64.ActiveCfg = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.ReleaseUnicode|Win32.ActiveCfg = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.ReleaseUnicode|Win32.Build.0 = Release|Win32
-		{FA3803CF-6433-4959-9517-8EC505C5D919}.ReleaseUnicode|x64.ActiveCfg = Release|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Debug|Win32.ActiveCfg = Debug|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Debug|Win32.Build.0 = Debug|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Debug|x64.ActiveCfg = Debug|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Debug|x64.Build.0 = Debug|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.DebugUnicode|Win32.ActiveCfg = DebugUnicode|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.DebugUnicode|Win32.Build.0 = DebugUnicode|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.DebugUnicode|x64.ActiveCfg = DebugUnicode|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.DebugUnicode|x64.Build.0 = DebugUnicode|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Hybrid|Win32.ActiveCfg = Hybrid|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Hybrid|Win32.Build.0 = Hybrid|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Hybrid|x64.ActiveCfg = Hybrid|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Hybrid|x64.Build.0 = Hybrid|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.HybridUnicode|Win32.ActiveCfg = HybridUnicode|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.HybridUnicode|Win32.Build.0 = HybridUnicode|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.HybridUnicode|x64.ActiveCfg = HybridUnicode|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.HybridUnicode|x64.Build.0 = HybridUnicode|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Release|Win32.ActiveCfg = Release|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Release|Win32.Build.0 = Release|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Release|x64.ActiveCfg = Release|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.Release|x64.Build.0 = Release|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.ReleaseUnicode|Win32.ActiveCfg = ReleaseUnicode|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.ReleaseUnicode|Win32.Build.0 = ReleaseUnicode|Win32
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.ReleaseUnicode|x64.ActiveCfg = ReleaseUnicode|x64
-		{0A852E24-4C6E-4546-87BE-CBF8D950AED7}.ReleaseUnicode|x64.Build.0 = ReleaseUnicode|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
