@@ -5,18 +5,36 @@
 
 	purpose:	导出Mesh相关
 	TODO:		双面材质mesh导出
-	ISSUE		开始没用顶点索引的时候,光照和UV倒是显示正常.加了索引后,就不正常了.
 *********************************************************************/
 #ifndef ExportMesh_h__
 #define ExportMesh_h__
 
 #include "ExportObject.h"
 #include "ExportSkeleton.h"
+#include "Utility.h"
+
+//Point3 hash特化
+namespace std
+{
+	template<>
+	struct hash<typename Point3>
+	{
+		inline size_t operator()(const Point3& v) const
+		{
+			size_t seed = 0;
+			Utility::hash_combine(seed, v.x);
+			Utility::hash_combine(seed, v.y);
+			Utility::hash_combine(seed, v.z);
+			return seed;
+		}
+	};
+}
 
 class ExpoMesh : public ExpoObject
 {
 	typedef std::vector<Point3>	VecUV;
 	typedef std::unordered_map<unsigned int, unsigned int>	IndexRemap;
+	typedef std::unordered_map<Point3, std::vector<unsigned int>>	PosIndexMap;
 
 	struct SVertex
 	{
@@ -40,9 +58,10 @@ class ExpoMesh : public ExpoObject
 
 		std::string			matName;
 		std::string			skeletonName;
-		std::vector<SFace>	faces;
-		std::vector<SVertex>vertexList;
-		IndexRemap			indexmap;
+		std::vector<SFace>	faces;					//所有面
+		std::vector<SVertex>vertexList;				//所有顶点
+		IndexRemap			indexmap;				//MAX顶点索引->vertexList中的索引
+		PosIndexMap			posIdxMap;				//方便查找具有相同坐标的顶点的索引
 		bool				bUse32bitindex;
 		bool				bHasDiffuse;
 		int					uvCount;

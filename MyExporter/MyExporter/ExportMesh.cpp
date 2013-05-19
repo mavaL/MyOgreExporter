@@ -225,64 +225,65 @@ void ExpoMesh::_CollectInfo()
 
 		for (int i = 0; i < 3; i++)
 		{
-			size_t duplicateVertIdx = verts.size();
-			bool bDuplicate = false;
-			//检测是否有坐标相同顶点(做合并)
 			Point3 pos = m_mesh->GetVertex(pFace->vert[i]) * CONFIG.m_unitScale;
-			for (size_t iVert=0; iVert<verts.size(); ++iVert)
+			Point3 normal = m_mesh->GetNormal(pFace, i);
+
+			DWORD index = pFace->vert[i];
+			bool bNewVertex = true;
+			
+			auto iter = m_subMesh.posIdxMap.find(pos);
+			if (iter != m_subMesh.posIdxMap.end())
 			{
-				if (verts[iVert].position == pos)
+				const auto& idxs = iter->second;
+				for (size_t iIdx=0; iIdx<idxs.size(); ++iIdx)
 				{
-					duplicateVertIdx = iVert;
-					bDuplicate = true;
-					break;
+					const SVertex& vert = verts[idxs[iIdx]];
+					//顶点坐标和法线都相同,是相同顶点
+					if (vert.position == pos && vert.normal == normal)
+					{
+						index = idxs[iIdx];
+						bNewVertex = false;
+						break;
+					}
 				}
 			}
 
-			SVertex newVertex;
-
-			if (bDuplicate)
+			if (bNewVertex)
 			{
-				face.vertexs[i] = duplicateVertIdx;
-			}	
+				SVertex newVertex;
+				//position  
+				newVertex.position = pos;
+				//diffuse 
+				newVertex.diffuse = m_mesh->GetColorVertex(index);
+				//alpha
+				newVertex.alpha = m_mesh->GetAlphaVertex(index);  
+				//normal
+				newVertex.normal = m_mesh->GetNormal(pFace, i);
+
+				//uv
+				int ch = m_subMesh.uvCount > 1 ? 1 : 0;
+				for (; ch < texMap.Count(); ch++)
+				{
+					DWORD idx[3];
+					Point3 tv;
+
+					if (m_mesh->GetMapFaceIndex(texMap[ch], iFace, idx))  
+						tv = m_mesh->GetMapVertex(texMap[ch], idx[i]);  
+					else  
+						tv = m_mesh->GetMapVertex(texMap[ch], index);  
+
+					newVertex.uv.push_back(Point3(tv.x, tv.y, tv.z));
+				}
+
+				verts.push_back(newVertex);
+				face.vertexs[i] = verts.size() - 1;
+				m_subMesh.indexmap.insert(std::make_pair(index, verts.size() - 1));
+				m_subMesh.posIdxMap[pos].push_back(verts.size() - 1);
+			}
 			else
 			{
-				DWORD index = pFace->vert[i];
-				auto iter = m_subMesh.indexmap.find(index);
-				if (iter == m_subMesh.indexmap.end())
-				{
-					//position  
-					newVertex.position = pos;
-					//diffuse 
-					newVertex.diffuse = m_mesh->GetColorVertex(index);
-					//alpha
-					newVertex.alpha = m_mesh->GetAlphaVertex(index);  
-					//normal
-					newVertex.normal = m_mesh->GetNormal(pFace, i);
-
-					//uv
-					int ch = m_subMesh.uvCount > 1 ? 1 : 0;
-					for (; ch < texMap.Count(); ch++)
-					{
-						DWORD idx[3];
-						Point3 tv;
-
-						if (m_mesh->GetMapFaceIndex(texMap[ch], iFace, idx))  
-							tv = m_mesh->GetMapVertex(texMap[ch], idx[i]);  
-						else  
-							tv = m_mesh->GetMapVertex(texMap[ch], index);  
-
-						newVertex.uv.push_back(Point3(tv.x, tv.y, tv.z));
-					}
-
-					verts.push_back(newVertex);
-					face.vertexs[i] = verts.size() - 1;
-					m_subMesh.indexmap.insert(std::make_pair(index, verts.size() - 1));
-				}
-				else
-				{
-					face.vertexs[i] = iter->second;
-				}
+				face.vertexs[i] = index;
+				m_subMesh.posIdxMap[pos].push_back(index);
 			}
 		}  
 	}

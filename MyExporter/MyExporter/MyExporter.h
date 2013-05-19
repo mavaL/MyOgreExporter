@@ -23,6 +23,7 @@
 #include "utilapi.h"
 
 #include "Singleton.h"
+#include "ExportDialog.h"
 
 enum eExpoType
 {
@@ -72,6 +73,8 @@ private:
 	RootNodeContainer	m_rootNodes;
 };
 
+
+#define MYEXPORTER	MyExporter::GetSingleton()
 
 
 extern TCHAR *GetString(int id);
