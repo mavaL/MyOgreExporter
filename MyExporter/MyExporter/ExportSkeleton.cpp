@@ -4,14 +4,16 @@
 #include "ExportDialog.h"
 #include "Utility.h"
 #include "ExportMesh.h"
+#include "ExportClip.h"
 
-ExpoSkeleton::ExpoSkeleton( IGameNode* node )
-:m_node(node)
+ExpoSkeleton::ExpoSkeleton( ExpoObject* parent )
 {
-	assert(m_node->GetIGameObject()->GetIGameType() == IGameObject::IGAME_MESH && "Construct ExpoSkeleton with IGameMesh!");
+	m_parent = dynamic_cast<ExpoMesh*>(parent);
+	m_parent->SetSkeleton(this);
+	assert(m_parent->GetGameNode()->GetIGameObject()->GetIGameType() == IGameObject::IGAME_MESH && "Construct ExpoSkeleton with IGameMesh!");
 
 	m_name = "E:\\3ds Max 2010\\plugins\\";
-	m_name += m_node->GetName();
+	m_name += m_parent->GetGameNode()->GetName();
 	m_name += ".skeleton.xml";
 }
 
@@ -20,6 +22,10 @@ ExpoSkeleton::~ExpoSkeleton()
 	for (size_t iJoint=0; iJoint<m_joints.size(); ++iJoint)
 		SAFE_DELETE(m_joints[iJoint]);
 	m_joints.clear();
+
+	for (size_t iClip=0; iClip<m_clips.size(); ++iClip)
+		m_clips[iClip]->DetachOwner();
+	m_clips.clear();
 }
 
 bool ExpoSkeleton::Export()
@@ -96,10 +102,10 @@ bool ExpoSkeleton::Export()
 	return true;
 }
 
-bool ExpoSkeleton::CollectInfo(ExpoMesh* parent)
+bool ExpoSkeleton::CollectInfo()
 {
 	MyExporter& exporter = MyExporter::GetSingleton();
-	m_skin = m_node->GetIGameObject()->GetIGameSkin();
+	m_skin = m_parent->GetGameNode()->GetIGameObject()->GetIGameSkin();
 	assert(m_skin && "This mesh doesn't have any skin!");
 
 	//TODO:目前不支持Bip动画
@@ -115,8 +121,11 @@ bool ExpoSkeleton::CollectInfo(ExpoMesh* parent)
 	for (int iBone=0; iBone<m_skin->GetTotalBoneCount(); ++iBone)
 	{
 		IGameNode* pBone = m_skin->GetIGameBone(iBone);
-		while (pBone->GetNodeParent())
+		while (	pBone->GetNodeParent() && 
+				m_skin->GetBoneIndex(pBone->GetNodeParent()) != -1)
+		{
 			pBone = pBone->GetNodeParent();
+		}
 		
 		if(std::find(vecRootBones.begin(), vecRootBones.end(), pBone) == vecRootBones.end())
 			vecRootBones.push_back(pBone);
@@ -130,8 +139,8 @@ bool ExpoSkeleton::CollectInfo(ExpoMesh* parent)
 			return false;
 	}
 
-	//蒙皮信息
-	IGameMesh* mesh = dynamic_cast<IGameMesh*>(m_node->GetIGameObject());
+	/////蒙皮信息
+	IGameMesh* mesh = dynamic_cast<IGameMesh*>(m_parent->GetGameNode()->GetIGameObject());
 	int numSkinedVert = m_skin->GetNumOfSkinnedVerts();
 
 	if(numSkinedVert < mesh->GetNumberOfVerts())
@@ -141,7 +150,7 @@ bool ExpoSkeleton::CollectInfo(ExpoMesh* parent)
 	}
 
 	//以三角面来进行遍历,因为我们想获取每个蒙皮顶点的顶点索引
-	auto& indexMap = parent->GetIndexMap();
+	auto& indexMap = m_parent->GetIndexMap();
 	int iFaceCount = mesh->GetNumberOfFaces();
 	for (int iFace=0; iFace<iFaceCount; ++iFace)
 	{
@@ -202,6 +211,12 @@ ExpoSkeleton::SJoint* ExpoSkeleton::_GetJoint( IGameNode* pJoint )
 
 bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 {
+	assert(pJoint);
+	
+	//这个骨头不属于本骨骼的蒙皮
+	if(m_skin->GetBoneIndex(pJoint) == -1)
+		return true;
+
 	MyExporter& exporter = MyExporter::GetSingleton();
 
 	//能肯定该joint未被解析
@@ -233,7 +248,7 @@ bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 	//获取joint变换
 	const GMatrix tm = Utility::GetLocalTransform(pJoint, pJoint->GetNodeParent());
 	
-	joint->position = tm.Translation();
+	joint->position = tm.Translation();		//???????????????????????????是否需要转换度量
 	joint->rotation = tm.Rotation();
 	joint->scale	= tm.Scaling();
 
@@ -253,4 +268,22 @@ bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 			return false;
 
 	return true;
+}
+
+void ExpoSkeleton::AddClip( ExpoClip* clip )
+{
+	assert(clip);
+	m_clips.push_back(clip);
+}
+
+void ExpoSkeleton::DeleteClip( const std::string name )
+{
+	for	(auto iter=m_clips.begin(); iter!=m_clips.end(); ++iter)
+	{
+		if ((*iter)->GetName() == name)
+		{
+			m_clips.erase(iter);
+			break;
+		}
+	}
 }

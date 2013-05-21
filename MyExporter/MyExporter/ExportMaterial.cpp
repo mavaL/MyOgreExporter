@@ -17,8 +17,6 @@ ExpoMaterial::ExpoMaterial( IGameNode* node )
 
 bool ExpoMaterial::Export()
 {
-	_CollectInfo();
-
 	std::ofstream materialFile;
 	materialFile.open(m_name.c_str(), std::ios::out);
 
@@ -32,7 +30,7 @@ bool ExpoMaterial::Export()
 	return true;
 }
 
-void ExpoMaterial::_CollectInfo()
+bool ExpoMaterial::CollectInfo()
 {
 	std::stringstream of;
 	std::string matName = m_material ? m_material->GetMaterialName() : CONFIG.m_defaultMaterialName;
@@ -70,6 +68,8 @@ void ExpoMaterial::_CollectInfo()
 	of << "}" << std::endl;
 
 	m_stream = of.str();
+
+	return true;
 }
 
 bool ExpoMaterial::_StreamPass( std::ostream &of, IGameMaterial *mtl )

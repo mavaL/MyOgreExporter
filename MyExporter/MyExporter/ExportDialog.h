@@ -17,9 +17,11 @@ public:
 
 public:
 	static INT_PTR CALLBACK ExportDlgProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
+	static INT_PTR CALLBACK EditClipDlgProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
 
-	void		Init(HWND hwnd);
+	void		Init(const std::vector<IGameNode*>& vecRootNodes);
 	void		Destroy();
+	bool		OnAddClip(HWND hwnd);
 	void		LogInfo(const std::string& info);
 
 private:

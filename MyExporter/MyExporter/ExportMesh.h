@@ -55,7 +55,6 @@ public:
 	{
 		SSubMesh():matName(""),skeletonName(""),bUse32bitindex(false),
 			bHasDiffuse(false),uvCount(0),bSkined(false),pSkeleton(nullptr) {}
-		~SSubMesh() { SAFE_DELETE(pSkeleton); }
 
 		std::string			matName;
 		std::string			skeletonName;
@@ -74,11 +73,15 @@ public:
 	ExpoMesh(IGameNode* node);
 
 public:
+	virtual eExpoType	GetType()	{ return eExpoType_Mesh; }
 	virtual bool	Export();
-	IndexRemap& GetIndexMap() { return m_subMesh.indexmap; }
+	virtual bool	CollectInfo();
+
+	void			SetSkeleton(ExpoSkeleton* skel) { m_subMesh.pSkeleton = skel; }
+	IGameNode*		GetGameNode() { return m_pNode; }
+	IndexRemap&		GetIndexMap() { return m_subMesh.indexmap; }
 
 private:
-	void		_CollectInfo();
 	bool		_WriteMesh();
 	bool		_WriteSubmesh(const SSubMesh& subMesh, TiXmlElement* xmlParent);
 

@@ -49,10 +49,10 @@ INT_PTR CALLBACK ExpoConfig::DlgConfigProc( HWND hWnd,UINT message,WPARAM wParam
 		}
 		break;
 
-	default: return ::DefWindowProc(hWnd, message, wParam, lParam);
+	default: return FALSE;
 	}
 
-	return 1;
+	return TRUE;
 }
 
 void ExpoConfig::SetUnitSetup( int unitType, float unitScale )

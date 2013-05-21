@@ -19,6 +19,7 @@
 #include "ExportMesh.h"
 #include "ExportMaterial.h"
 #include "ExportSkeleton.h"
+#include "ExportClip.h"
 
 #define MyExporter_CLASS_ID	Class_ID(0x8b0c44de, 0x651b6a99)
 
@@ -63,6 +64,9 @@ MyExporter::MyExporter()
 	hPanel = nullptr;
 	pScene = nullptr;
 	dlgExpo = new ExpoDlg;
+
+	startFrame = -1;
+	endFrame = -1;
 }
 
 MyExporter::~MyExporter()
@@ -97,12 +101,20 @@ INT_PTR CALLBACK MyExporter::DlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM 
 	{
 		case WM_COMMAND:
 			{
-				if (LOWORD(wParam) == IDC_EnterExporter)
+				switch (LOWORD(wParam))
+				{
+				case IDC_EnterExporter:
 					DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DlgExport), 
-					exporter.ip->GetMAXHWnd(), ExpoDlg::ExportDlgProc, (LPARAM)0);
-				else if	(LOWORD(wParam) == IDC_Exporter_Options)
+						exporter.ip->GetMAXHWnd(), ExpoDlg::ExportDlgProc, (LPARAM)0);
+					break;
+
+				case IDC_Exporter_Options:
 					DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DlgExportConfig), 
-					exporter.ip->GetMAXHWnd(), ExpoConfig::DlgConfigProc, (LPARAM)0);
+						exporter.ip->GetMAXHWnd(), ExpoConfig::DlgConfigProc, (LPARAM)0);
+					break;
+
+				default: return FALSE;
+				}
 			}
 			break;
 
@@ -113,56 +125,61 @@ INT_PTR CALLBACK MyExporter::DlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM 
 			break;
 
 		default:
-			return 0;
+			return FALSE;
 	}
-	return 1;
+	return TRUE;
 }
 
-void MyExporter::Init(HWND hWnd)
+void MyExporter::Init()
 {
 	pScene = GetIGameInterface();
-	m_rootNodes.clear();
 
 	//ogre坐标系
 	IGameConversionManager * cm = GetConversionManager();
 	cm->SetCoordSystem(CONFIG.m_coordSystem);
 
 	if(!pScene->InitialiseIGame())
+	{
 		MessageBox(ip->GetMAXHWnd(), "InitialiseIGame() failed!", "Error", MB_ICONERROR);
+		return;
+	}
 	pScene->SetStaticFrame(0);
 
-	for (int iRootNode=0; iRootNode<pScene->GetTopLevelNodeCount(); ++iRootNode)
-	{
-		IGameNode* pRootNode = pScene->GetTopLevelNode(iRootNode);
-		m_rootNodes.push_back(pRootNode);
-	}
+	startFrame = pScene->GetSceneStartTime() / pScene->GetSceneTicks();
+	endFrame = pScene->GetSceneEndTime() / pScene->GetSceneTicks();
 
-	dlgExpo->Init(hWnd);
-}
-
-void MyExporter::Destroy(HWND hWnd)
-{
-	m_rootNodes.clear();
-	pScene->ReleaseIGame();
-	dlgExpo->Destroy();
-}
-
-void MyExporter::DoExport()
-{
-	//确定单位
+	//确定度量
 	int unitType;
 	float unitScale;
 	GetMasterUnitInfo(&unitType, &unitScale);
 	CONFIG.SetUnitSetup(unitType, unitScale);
 
-	for (size_t i=0; i<m_rootNodes.size(); ++i)
+	//收集所有需导出物体的数据
+	std::vector<IGameNode*> vecRoot;
+	for (int iRootNode=0; iRootNode<pScene->GetTopLevelNodeCount(); ++iRootNode)
 	{
-		if(m_rootNodes[i]->GetIGameObject()->GetIGameType() == IGameObject::IGAME_MESH)
-			DoExport(eExpoType_Mesh, m_rootNodes[i]);
+		IGameNode* pRootNode = pScene->GetTopLevelNode(iRootNode);
+		
+		if(pRootNode->GetIGameObject()->GetIGameType() == IGameObject::IGAME_MESH)
+			DoCollectInfo(eExpoType_Mesh, pRootNode);
+
+		vecRoot.push_back(pRootNode);
 	}
+
+	dlgExpo->Init(vecRoot);
 }
 
-void MyExporter::DoExport( eExpoType type, IGameNode* node )
+void MyExporter::Destroy()
+{
+	dlgExpo->Destroy();
+	pScene->ReleaseIGame();
+
+	for(size_t i=0; i<m_expoObjects.size(); ++i)
+		delete m_expoObjects[i];
+	m_expoObjects.clear();
+}
+
+bool MyExporter::DoCollectInfo( eExpoType type, IGameNode* node, ExpoObject* parent, const std::string& name )
 {
 	ExpoObject* obj = nullptr;
 
@@ -170,28 +187,96 @@ void MyExporter::DoExport( eExpoType type, IGameNode* node )
 	{
 	case eExpoType_Mesh:		obj = new ExpoMesh(node); break;
 	case eExpoType_Material:	obj = new ExpoMaterial(node); break;
-	case eExpoType_Skeleton:	obj = new ExpoSkeleton(node); break;
-	default:					dlgExpo->LogInfo("Not support export type!!!"); break;
+	case eExpoType_Skeleton:	obj = new ExpoSkeleton(parent); break;
+	case eExpoType_Clip:		obj = new ExpoClip(parent); break;
+	default:					dlgExpo->LogInfo("Not support exporting object type!!!"); break;
 	}
 
-	DoExport(obj);
+	if(name.length())
+		obj->SetName(name);
 
-	SAFE_DELETE(obj);
-}
-
-void MyExporter::DoExport( ExpoObject* obj )
-{
-	std::string expoName("Exporting ");
-	expoName += obj->GetName();
-
-	if(obj->Export())
+	if(!obj->CollectInfo())
 	{
-		expoName += " succeed.";
-		dlgExpo->LogInfo(expoName);
+		char msg[MAX_PATH];
+		sprintf_s(msg, MAX_PATH, "Error: Collecting info failed!!!	[%s]", obj->GetName().c_str());
+		dlgExpo->LogInfo(msg);
+
+		return false;
 	}
 	else
 	{
-		expoName += " failed!!!";
-		dlgExpo->LogInfo(expoName);
+		char msg[MAX_PATH];
+		sprintf_s(msg, MAX_PATH, "Collecting info succeed.	[%s]", obj->GetName().c_str());
+		dlgExpo->LogInfo(msg);
 	}
+
+	m_expoObjects.push_back(obj);
+
+	return true;
+}
+
+void MyExporter::DoExport()
+{
+	//导出所有物体
+	for (size_t i=0; i<m_expoObjects.size(); ++i)
+	{
+		std::string expoName("Exporting ");
+		expoName += m_expoObjects[i]->GetName();
+
+		if(m_expoObjects[i]->Export())
+		{
+			expoName += " succeed.";
+			dlgExpo->LogInfo(expoName);
+		}
+		else
+		{
+			expoName += " failed!!!";
+			dlgExpo->LogInfo(expoName);
+		}
+	}
+}
+
+bool MyExporter::AddClip( const std::string& name, const SClipParam& clip )
+{
+	assert(clips.find(name) == clips.end());
+	clips.insert(std::make_pair(name, clip));
+
+	//对每个skeleton都要加入该动画
+	for(size_t i=0; i<m_expoObjects.size(); ++i)
+	{
+		if (m_expoObjects[i]->GetType() == eExpoType_Skeleton)
+		{
+			if(!DoCollectInfo(eExpoType_Clip, nullptr, m_expoObjects[i], name))
+				return false;
+		}
+	}
+
+	return true;
+}
+
+void MyExporter::DeleteClip( const std::string& name )
+{
+	auto iter = clips.find(name);
+	assert(iter != clips.end());
+	clips.erase(iter);
+
+	for(auto itObj=m_expoObjects.begin(); itObj!=m_expoObjects.end();/* ++itObj*/)
+	{
+		if ((*itObj)->GetType() == eExpoType_Clip && (*itObj)->GetName() == name)
+		{
+			delete *itObj;
+			itObj = m_expoObjects.erase(itObj);
+		}
+		else
+		{
+			++itObj;
+		}
+	}
+}
+
+const SClipParam& MyExporter::GetClip( const std::string& name )
+{
+	auto iter = clips.find(name);
+	assert(iter != clips.end());
+	return iter->second;
 }

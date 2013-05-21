@@ -17,20 +17,7 @@ ExpoMesh::ExpoMesh( IGameNode* node )
 
 bool ExpoMesh::Export()
 {
-	assert(m_pNode);
-
-	IGameObject* pObject = m_pNode->GetIGameObject();  
-	assert (pObject->GetIGameType() == IGameObject::IGAME_MESH);
-	m_mesh = (IGameMesh*) pObject;
-	
 	bool bSucceed = _WriteMesh();
-
-	//导出SubMesh的材质
-	MyExporter::GetSingleton().DoExport(eExpoType_Material, m_pNode);
-
-	//导出skeleton
-	if(m_subMesh.bSkined)
-		MyExporter::GetSingleton().DoExport(m_subMesh.pSkeleton);
 
 	//finished
 	m_pNode->ReleaseIGameObject();
@@ -41,22 +28,6 @@ bool ExpoMesh::Export()
 
 bool ExpoMesh::_WriteMesh()
 {
-	if (!m_mesh->IsEntitySupported())  
-	{
-		//TODO: use log file
-		MessageBox (NULL, "Entity not supported", "Ogre exporter", MB_OK);
-		return false;
-	}
-
-	//取用数据前必须先InitializeData
-	if (!m_mesh->InitializeData())  
-	{
-		MessageBox (NULL, "Mesh InitializeData() failed!", "Ogre exporter", MB_OK);
-		return false;
-	}
-
-	_CollectInfo();
-
 	TiXmlDocument *pXmlDoc = new TiXmlDocument();  
 	TiXmlDeclaration* declarationElem = new TiXmlDeclaration(_T("1.0"), _T(""), _T(""));  
 	pXmlDoc->LinkEndChild(declarationElem);  
@@ -199,8 +170,32 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 	return true;
 }
 
-void ExpoMesh::_CollectInfo()
+bool ExpoMesh::CollectInfo()
 {
+	assert(m_pNode);
+	IGameObject* pObject = m_pNode->GetIGameObject();  
+	assert (pObject->GetIGameType() == IGameObject::IGAME_MESH);
+	m_mesh = static_cast<IGameMesh*>(pObject);
+
+	if (!m_mesh->IsEntitySupported())  
+	{
+		char msg[MAX_PATH];
+		sprintf_s(msg, MAX_PATH, "Error: IsEntitySupported() failed!!!	[%s]", m_name.c_str());
+		MYEXPORTER.dlgExpo->LogInfo(msg);
+
+		return false;
+	}
+
+	//取用数据前必须先InitializeData
+	if (!m_mesh->InitializeData())  
+	{
+		char msg[MAX_PATH];
+		sprintf_s(msg, MAX_PATH, "Mesh InitializeData() failed!!!	[%s]", m_name.c_str());
+		MYEXPORTER.dlgExpo->LogInfo(msg);
+
+		return false;
+	}
+
 	Mesh* mesh = m_mesh->GetMaxMesh();
 
 	if(CONFIG.m_bBuildNormal)
@@ -297,17 +292,18 @@ void ExpoMesh::_CollectInfo()
 	}
 
 	//收集骨骼信息
-	if(m_pNode->GetIGameObject()->IsObjectSkinned())
+	if(m_pNode->GetIGameObject()->IsObjectSkinned() &&
+		MYEXPORTER.DoCollectInfo(eExpoType_Skeleton, m_pNode, this))
 	{
-		m_subMesh.pSkeleton = new ExpoSkeleton(m_pNode);
-
-		if (m_subMesh.pSkeleton->CollectInfo(this))
-		{
-			m_subMesh.bSkined = true;
-			m_subMesh.skeletonName = m_pNode->GetName();
-			m_subMesh.skeletonName += ".skeleton";
-		}
+		m_subMesh.bSkined = true;
+		m_subMesh.skeletonName = m_pNode->GetName();
+		m_subMesh.skeletonName += ".skeleton";
 	}
+
+	//收集材质信息
+	MYEXPORTER.DoCollectInfo(eExpoType_Material, m_pNode);
+
+	return true;
 }
 
 

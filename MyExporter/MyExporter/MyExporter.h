@@ -24,15 +24,18 @@
 
 #include "Singleton.h"
 #include "ExportDialog.h"
+#include "ExportObject.h"
 
-enum eExpoType
+typedef std::vector<ExpoObject*>	ExpoContainer;
+
+struct SClipParam 
 {
-	eExpoType_Mesh,
-	eExpoType_Material,
-	eExpoType_Skeleton
-};
+	SClipParam():nStart(-1),nEnd(-1),length(-1) {}
 
-class ExpoObject;
+	int		nStart, nEnd;
+	float	length;
+};
+typedef std::unordered_map<std::string, SClipParam>	Clips;
 
 //////////////////////////////////////////////////////////////////////////
 class MyExporter 
@@ -52,12 +55,18 @@ public:
 	virtual void BeginEditParams(Interface *ip,IUtil *iu);
 	virtual void EndEditParams(Interface *ip,IUtil *iu);
 
-	virtual void Init(HWND hWnd);
-	virtual void Destroy(HWND hWnd);
+	void		Init();
+	void		Destroy();
 
-	void		 DoExport();
-	void		 DoExport(eExpoType type, IGameNode* node);
-	void		 DoExport(ExpoObject* obj);
+	bool		DoCollectInfo(eExpoType type, IGameNode* node = nullptr, 
+		ExpoObject* parent = nullptr, const std::string& name = "");
+	void		DoExport();
+
+	const ExpoContainer&	GetExpoObjects() const { return m_expoObjects; }
+
+	bool		AddClip(const std::string& name, const SClipParam& clip);
+	const SClipParam&	GetClip(const std::string& name);
+	void		DeleteClip(const std::string& name);
 
 public:
 	HWND				hPanel;
@@ -66,11 +75,14 @@ public:
 	IUtil*				iu;
 	ExpoDlg*			dlgExpo;
 
+	int					startFrame;	//开始/结束关键帧
+	int					endFrame;
+	Clips				clips;
+
 private:
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-	typedef std::vector<IGameNode*>	RootNodeContainer;
-	RootNodeContainer	m_rootNodes;
+	ExpoContainer		m_expoObjects;
 };
 
 

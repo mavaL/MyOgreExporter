@@ -8,8 +8,13 @@
 #ifndef ExportObject_h__
 #define ExportObject_h__
 
-class IGameNode;
-class IGameMesh;
+enum eExpoType
+{
+	eExpoType_Mesh,
+	eExpoType_Material,
+	eExpoType_Skeleton,
+	eExpoType_Clip
+};
 
 class ExpoObject
 {
@@ -19,9 +24,14 @@ public:
 
 public:
 	virtual bool		Export() = 0;
+	virtual bool		CollectInfo() = 0;
+	virtual eExpoType	GetType() = 0;
+
 	const std::string&	GetName() const { return m_name; }
+	void				SetName(const std::string& name) { m_name = name; } 
 
 protected:
+	eExpoType			m_type;
 	std::string			m_name;
 };
 

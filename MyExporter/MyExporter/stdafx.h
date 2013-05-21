@@ -30,6 +30,7 @@
 #include <sstream>
 #include <iosfwd>
 
+#include <stdlib.h>
 #include <Windows.h>
 
 

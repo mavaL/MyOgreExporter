@@ -16,10 +16,11 @@ public:
 	ExpoMaterial(IGameNode* node);
 
 public:
+	virtual eExpoType	GetType()	{ return eExpoType_Material; }
 	virtual bool	Export();
+	virtual	bool	CollectInfo();
 
 private:
-	void			_CollectInfo();
 	bool			_StreamPass(std::ostream &of, IGameMaterial *mtl);
 
 private:

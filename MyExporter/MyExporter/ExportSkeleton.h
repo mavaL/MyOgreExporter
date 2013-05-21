@@ -3,7 +3,7 @@
 	filename	ExportSkeleton.h
 	author:		maval
 
-	purpose:	导出骨骼动画
+	purpose:	导出骨骼相关信息
 *********************************************************************/
 #ifndef ExportSkeleton_h__
 #define ExportSkeleton_h__
@@ -11,6 +11,7 @@
 #include "ExportObject.h"
 
 class ExpoMesh;
+class ExpoClip;
 
 class ExpoSkeleton : public ExpoObject
 {
@@ -37,24 +38,30 @@ public:
 	typedef std::map<DWORD, SVertexAssignment> VertAssignmentMap;
 
 public:
-	ExpoSkeleton(IGameNode* node);
+	ExpoSkeleton(ExpoObject* parent);
 	~ExpoSkeleton();
 
 public:
+	virtual eExpoType	GetType()	{ return eExpoType_Skeleton; }
 	virtual bool	Export();
-	bool			CollectInfo(ExpoMesh* parent);
-	VertAssignmentMap& GetVertexAssigns() { return m_vertAssigns; }
-
+	virtual bool	CollectInfo();
+	VertAssignmentMap&	GetVertexAssigns() { return m_vertAssigns; }
+	const JointList&	GetJoints() const { return m_joints; }	
+	void			AddClip(ExpoClip* clip);
+	void			DeleteClip(const std::string name);
 
 private:
 	bool			_LoadJoint(IGameNode* pJoint, SJoint* parent);
 	SJoint*			_GetJoint(IGameNode* pJoint);
 
 private:
-	IGameNode*		m_node;
+	ExpoMesh*		m_parent;
 	IGameSkin*		m_skin;
 	JointList		m_joints;
 	VertAssignmentMap	m_vertAssigns;
+
+	typedef std::vector<ExpoClip*>	ClipContainer;
+	ClipContainer	m_clips;
 };
 
 #endif // ExportSkeleton_h__

@@ -888,6 +888,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ExportClip.cpp" />
     <ClCompile Include="ExportConfig.cpp" />
     <ClCompile Include="ExportDialog.cpp" />
     <ClCompile Include="ExportMaterial.cpp" />
@@ -918,6 +919,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3dsmaxsdk_preinclude.h" />
+    <ClInclude Include="ExportClip.h" />
     <ClInclude Include="ExportConfig.h" />
     <ClInclude Include="ExportDialog.h" />
     <ClInclude Include="ExportMaterial.h" />
