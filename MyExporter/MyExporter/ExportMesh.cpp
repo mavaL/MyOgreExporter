@@ -143,19 +143,17 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 	if (m_subMesh.bSkined)
 	{
 		//bone assignments
- 		auto& vertAssigns = m_subMesh.pSkeleton->GetVertexAssigns();
 		TiXmlElement* boneassignments = new TiXmlElement("boneassignments");  
 		submeshNode->LinkEndChild(boneassignments);
 
-		for (auto itAssign=vertAssigns.begin(); itAssign!=vertAssigns.end(); ++itAssign)
+		for (size_t iVert=0; iVert<subMesh.vertexList.size(); ++iVert)
 		{
-			const ExpoSkeleton::SVertexAssignment& assign = itAssign->second;
-			const auto& weightMap = assign.weights;
+			const auto& weightMap = subMesh.vertexList[iVert].weights;
 			for (auto itWt=weightMap.begin(); itWt!=weightMap.end(); ++itWt)
 			{
 				TiXmlElement* assignNode = new TiXmlElement("vertexboneassignment");  
 				boneassignments->LinkEndChild(assignNode);
-				assignNode->SetAttribute("vertexindex", itAssign->first);
+				assignNode->SetAttribute("vertexindex", iVert);
 				assignNode->SetAttribute("boneindex", itWt->first);
 				assignNode->SetDoubleAttribute("weight", itWt->second);
 			}
@@ -200,6 +198,15 @@ bool ExpoMesh::CollectInfo()
 
 	if(CONFIG.m_bBuildNormal)
 		mesh->buildNormals();
+
+	//收集骨骼信息
+	if(m_pNode->GetIGameObject()->IsObjectSkinned() &&
+		MYEXPORTER.DoCollectInfo(eExpoType_Skeleton, m_pNode, this))
+	{
+		m_subMesh.bSkined = true;
+		m_subMesh.skeletonName = m_pNode->GetName();
+		m_subMesh.skeletonName += ".skeleton";
+	}
 
 	int iVertexCount	= m_mesh->GetNumberOfVerts();  
 	int iFaceCount		= m_mesh->GetNumberOfFaces();
@@ -278,9 +285,15 @@ bool ExpoMesh::CollectInfo()
 					newVertex.uv.push_back(Point3(tv.x, tv.y, tv.z));
 				}
 
+				//bone weights
+				if(m_subMesh.bSkined)
+				{
+					const auto& vertAssin = m_subMesh.pSkeleton->GetVertexAssigns();
+					newVertex.weights = vertAssin[index].weights;
+				}
+
 				verts.push_back(newVertex);
 				face.vertexs[i] = verts.size() - 1;
-				m_subMesh.indexmap.insert(std::make_pair(index, verts.size() - 1));
 				m_subMesh.posIdxMap[pos].push_back(verts.size() - 1);
 			}
 			else
@@ -289,15 +302,6 @@ bool ExpoMesh::CollectInfo()
 				m_subMesh.posIdxMap[pos].push_back(index);
 			}
 		}  
-	}
-
-	//收集骨骼信息
-	if(m_pNode->GetIGameObject()->IsObjectSkinned() &&
-		MYEXPORTER.DoCollectInfo(eExpoType_Skeleton, m_pNode, this))
-	{
-		m_subMesh.bSkined = true;
-		m_subMesh.skeletonName = m_pNode->GetName();
-		m_subMesh.skeletonName += ".skeleton";
 	}
 
 	//收集材质信息

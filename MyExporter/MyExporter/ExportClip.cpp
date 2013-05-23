@@ -78,6 +78,14 @@ void ExpoClip::_CollectKeyFrame(STrack& track, ExpoSkeleton::SJoint* joint, int 
 
 	AngAxis rot(kf.rotation);
 	rot.angle = -rot.angle;
+	if(rot.angle < -PI)
+	{
+		rot.angle += PI;
+	}
+	else if(rot.angle > PI)
+	{
+		rot.angle -= PI;
+	}
 	kf.rotation.Set(rot);
 
 	kf.time = (t - m_start * GetTicksPerFrame()) / (float)TIME_TICKSPERSEC * CONFIG.m_clipLengthScale;

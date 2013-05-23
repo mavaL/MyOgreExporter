@@ -36,7 +36,7 @@ public:
 	{
 		std::unordered_map<int, float> weights;
 	};
-	typedef std::map<DWORD, SVertexAssignment> VertAssignmentMap;
+	typedef std::vector<SVertexAssignment> VertAssignments;
 
 public:
 	ExpoSkeleton(ExpoObject* parent);
@@ -46,7 +46,7 @@ public:
 	virtual eExpoType	GetType()	{ return eExpoType_Skeleton; }
 	virtual bool	Export();
 	virtual bool	CollectInfo();
-	VertAssignmentMap&	GetVertexAssigns() { return m_vertAssigns; }
+	VertAssignments&	GetVertexAssigns() { return m_vertAssigns; }
 	const JointList&	GetJoints() const { return m_joints; }
 	IGameSkin*		GetSkin()	{ return m_skin; }
 	void			AddClip(ExpoClip* clip);
@@ -60,7 +60,7 @@ private:
 	ExpoMesh*		m_parent;
 	IGameSkin*		m_skin;
 	JointList		m_joints;
-	VertAssignmentMap	m_vertAssigns;
+	VertAssignments	m_vertAssigns;
 
 	typedef std::vector<ExpoClip*>	ClipContainer;
 	ClipContainer	m_clips;

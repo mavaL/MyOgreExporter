@@ -34,7 +34,6 @@ class ExpoMesh : public ExpoObject
 {
 public:
 	typedef std::vector<Point3>	VecUV;
-	typedef std::unordered_map<unsigned int, unsigned int>	IndexRemap;
 	typedef std::unordered_map<Point3, std::vector<unsigned int>>	PosIndexMap;
 
 	struct SVertex
@@ -44,7 +43,9 @@ public:
 		Point3		diffuse;
 		float		alpha;
 		VecUV		uv;
+		std::unordered_map<int, float> weights;
 	};
+	typedef std::vector<SVertex>	VertexList;
 
 	struct SFace
 	{
@@ -59,8 +60,7 @@ public:
 		std::string			matName;
 		std::string			skeletonName;
 		std::vector<SFace>	faces;					//所有面
-		std::vector<SVertex>vertexList;				//所有顶点
-		IndexRemap			indexmap;				//MAX顶点索引->vertexList中的索引
+		VertexList			vertexList;				//所有顶点
 		PosIndexMap			posIdxMap;				//方便查找具有相同坐标的顶点的索引
 		bool				bUse32bitindex;
 		bool				bHasDiffuse;
@@ -79,7 +79,6 @@ public:
 
 	void			SetSkeleton(ExpoSkeleton* skel) { m_subMesh.pSkeleton = skel; }
 	IGameNode*		GetGameNode() { return m_pNode; }
-	IndexRemap&		GetIndexMap() { return m_subMesh.indexmap; }
 
 private:
 	bool		_WriteMesh();

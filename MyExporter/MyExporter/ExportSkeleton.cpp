@@ -216,48 +216,37 @@ bool ExpoSkeleton::CollectInfo()
 		return false;
 	}
 
-	//以三角面来进行遍历,因为我们想获取每个蒙皮顶点的顶点索引
-	auto& indexMap = m_parent->GetIndexMap();
-	int iFaceCount = mesh->GetNumberOfFaces();
-	for (int iFace=0; iFace<iFaceCount; ++iFace)
+	m_vertAssigns.resize(numSkinedVert);
+	for (size_t i=0; i<numSkinedVert; ++i)
 	{
-		FaceEx* pFace = mesh->GetFace(iFace);
-		for (int i = 0; i < 3; i++)
+		IGameSkin::VertexType type = m_skin->GetVertexType(i);
+		auto& weightMap = m_vertAssigns[i].weights;
+
+		if (type == IGameSkin::IGAME_RIGID)		//角色头部可能是这种类型
 		{
-			DWORD vertexIndex = pFace->vert[i];
-			IGameSkin::VertexType type = m_skin->GetVertexType(pFace->vert[i]);
-			auto& weightMap = m_vertAssigns[indexMap[pFace->vert[i]]].weights;
-
-			if (type == IGameSkin::IGAME_RIGID)		//角色头部可能是这种类型
+			IGameNode* pBoneNode = m_skin->GetIGameBone(i, 0);
+			const SJoint* joint = _GetJoint(pBoneNode);
+			weightMap[joint->boneID] = 1.0f;	//rigid weight, no blend
+		}
+		else if (type == IGameSkin::IGAME_RIGID_BLENDED)	//正常多骨骼混合类型
+		{
+			int numWeights = m_skin->GetNumberOfBones(i);
+			for(int iWt=0; iWt<numWeights; ++iWt)
 			{
-				IGameNode* pBoneNode = m_skin->GetIGameBone(vertexIndex, 0);
+				IGameNode* pBoneNode = m_skin->GetIGameBone(i, iWt);
+				float weight = m_skin->GetWeight(i, iWt);
 				const SJoint* joint = _GetJoint(pBoneNode);
-
-				if(weightMap.find(joint->boneID) == weightMap.end())
-					weightMap.insert(std::make_pair(joint->boneID, 1.0f));	//rigid weight, no blend
+				weightMap[joint->boneID] = weight;
 			}
-			else if (type == IGameSkin::IGAME_RIGID_BLENDED)	//正常多骨骼混合类型
+
+			if(numWeights > 4)
 			{
-				int numWeights = m_skin->GetNumberOfBones(vertexIndex);
-				for(int iWt=0; iWt<numWeights; ++iWt)
-				{
-					IGameNode* pBoneNode = m_skin->GetIGameBone(vertexIndex, iWt);
-					float weight = m_skin->GetWeight(vertexIndex, iWt);
-					const SJoint* joint = _GetJoint(pBoneNode);
-
-					if(weightMap.find(joint->boneID) == weightMap.end())
-						weightMap.insert(std::make_pair(joint->boneID, weight));
-				}
-
-				if(numWeights > 4)
-				{
-					exporter.dlgExpo->LogInfo("Warning: There are some vertexs skinned with more than 4 bones!!!");
-				}
+				exporter.dlgExpo->LogInfo("Warning: There are some vertexs skinned with more than 4 bones!!!");
 			}
-			else
-			{
-				exporter.dlgExpo->LogInfo("Warning: Unknown vertex skin type!!!");
-			}
+		}
+		else
+		{
+			exporter.dlgExpo->LogInfo("Warning: Unknown vertex skin type!!!");
 		}
 	}
 
@@ -324,6 +313,14 @@ bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 	//why??
 	AngAxis rot(joint->rotation);
 	rot.angle = -rot.angle;
+	if(rot.angle < -PI)
+	{
+		rot.angle += PI;
+	}
+	else if(rot.angle > PI)
+	{
+		rot.angle -= PI;
+	}
 	joint->rotation.Set(rot);
 
 	m_joints.push_back(joint);
