@@ -43,7 +43,7 @@ public:
 		Point3		diffuse;
 		float		alpha;
 		VecUV		uv;
-		std::unordered_map<int, float> weights;
+		std::unordered_map<int, float>* weights;
 	};
 	typedef std::vector<SVertex>	VertexList;
 

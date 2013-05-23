@@ -5,6 +5,7 @@
 #include "Utility.h"
 #include "ExportMesh.h"
 #include "ExportClip.h"
+#include "ExportConfig.h"
 
 ExpoSkeleton::ExpoSkeleton( ExpoObject* parent )
 {
@@ -310,17 +311,10 @@ bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 	joint->rotation = tm.Rotation();
 	joint->scale	= tm.Scaling();
 
-	//why??
+	//注意MAX的变换是左手系,故角度也是
 	AngAxis rot(joint->rotation);
-	rot.angle = -rot.angle;
-	if(rot.angle < -PI)
-	{
-		rot.angle += PI;
-	}
-	else if(rot.angle > PI)
-	{
-		rot.angle -= PI;
-	}
+	if(CONFIG.m_coordSystem == IGameConversionManager::IGAME_OGL)
+		rot.angle = -rot.angle;
 	joint->rotation.Set(rot);
 
 	m_joints.push_back(joint);

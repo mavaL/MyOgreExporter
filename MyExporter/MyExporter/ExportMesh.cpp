@@ -149,7 +149,7 @@ bool ExpoMesh::_WriteSubmesh( const SSubMesh& subMesh, TiXmlElement* xmlParent )
 		for (size_t iVert=0; iVert<subMesh.vertexList.size(); ++iVert)
 		{
 			const auto& weightMap = subMesh.vertexList[iVert].weights;
-			for (auto itWt=weightMap.begin(); itWt!=weightMap.end(); ++itWt)
+			for (auto itWt=weightMap->begin(); itWt!=weightMap->end(); ++itWt)
 			{
 				TiXmlElement* assignNode = new TiXmlElement("vertexboneassignment");  
 				boneassignments->LinkEndChild(assignNode);
@@ -288,8 +288,8 @@ bool ExpoMesh::CollectInfo()
 				//bone weights
 				if(m_subMesh.bSkined)
 				{
-					const auto& vertAssin = m_subMesh.pSkeleton->GetVertexAssigns();
-					newVertex.weights = vertAssin[index].weights;
+					auto& vertAssin = m_subMesh.pSkeleton->GetVertexAssigns();
+					newVertex.weights = &vertAssin[index].weights;
 				}
 
 				verts.push_back(newVertex);
