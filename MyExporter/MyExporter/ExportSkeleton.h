@@ -18,10 +18,11 @@ class ExpoSkeleton : public ExpoObject
 public:
 	struct SJoint 
 	{
-		SJoint():name(""),boneHandle(-1),parent(nullptr),boneID(-1),
+		SJoint():name(""),node(nullptr),boneHandle(-1),parent(nullptr),boneID(-1),
 			position(-1,-1,-1),rotation(0.0f,0.0f,0.0f,1.0f),scale(1,1,1) {}
 
 		SJoint*		parent;
+		IGameNode*	node;
 		std::string	name;
 		int			boneID;			//.skeleton中的骨骼ID.不能用boneHandle,因为骨骼在OGRE中以vector存取,要求ID连续~
 		int			boneHandle;		//3DMAX的节点handle
@@ -46,7 +47,8 @@ public:
 	virtual bool	Export();
 	virtual bool	CollectInfo();
 	VertAssignmentMap&	GetVertexAssigns() { return m_vertAssigns; }
-	const JointList&	GetJoints() const { return m_joints; }	
+	const JointList&	GetJoints() const { return m_joints; }
+	IGameSkin*		GetSkin()	{ return m_skin; }
 	void			AddClip(ExpoClip* clip);
 	void			DeleteClip(const std::string name);
 

@@ -10,6 +10,9 @@ ExpoConfig::ExpoConfig()
 	m_bBuildNormal			=	true;
 	m_defaultMaterialName	=	"DefaultMaterial";
 	m_coordSystem			=	IGameConversionManager::IGAME_OGL;
+	m_clipSampleRate		=	0.05f;
+	m_bCopyFirstFrameAsLast	=	false;
+	m_clipLengthScale		=	1.0f;
 }
 
 INT_PTR CALLBACK ExpoConfig::DlgConfigProc( HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam )
@@ -18,12 +21,17 @@ INT_PTR CALLBACK ExpoConfig::DlgConfigProc( HWND hWnd,UINT message,WPARAM wParam
 
 	switch (message) 
 	{
+	case WM_SHOWWINDOW: ::SetFocus(nullptr); break;
+
 	case WM_INITDIALOG:
 		{
 			config.m_hwnd = hWnd;
 			CheckRadioButton(hWnd, IDC_Config_Coord3DMax, IDC_Config_CoordOpenGL, IDC_Config_Coord3DMax + config.m_coordSystem);
 			CheckDlgButton(hWnd, IDC_Config_BuildNormal, config.m_bBuildNormal);
 			CheckDlgButton(hWnd, IDC_Config_UnitMeter, config.m_bUnitMeter);
+			CheckDlgButton(hWnd, IDC_Config_CopyFirstFrame, config.m_bCopyFirstFrameAsLast);
+			SetDlgItemInt(hWnd, IDC_Config_SampleRate, ::ceil(1 / config.m_clipSampleRate), FALSE);
+			SetDlgItemFloat(hWnd, IDC_Config_ClipLengthScale, config.m_clipLengthScale);
 		}
 		break; 
 
@@ -42,9 +50,48 @@ INT_PTR CALLBACK ExpoConfig::DlgConfigProc( HWND hWnd,UINT message,WPARAM wParam
 
 			case IDC_Config_BuildNormal:	config.m_bBuildNormal = IsDlgButtonChecked(hWnd, IDC_Config_BuildNormal); break;
 			case IDC_Config_UnitMeter:		config.m_bUnitMeter = IsDlgButtonChecked(hWnd, IDC_Config_UnitMeter); break;
+			case IDC_Config_CopyFirstFrame:	config.m_bCopyFirstFrameAsLast = IsDlgButtonChecked(hWnd, IDC_Config_CopyFirstFrame); break;
 
-			case IDOK: EndDialog(hWnd, 0); break;
-			default: break;
+			case IDC_Config_SampleRate:
+				{
+					if (HIWORD(wParam) == EN_KILLFOCUS)
+					{
+						BOOL bSucceed = FALSE;
+						int rate = GetDlgItemInt(hWnd, IDC_Config_SampleRate, &bSucceed, TRUE);
+						if(!bSucceed || rate <= 0)
+						{
+							MessageBox(hWnd, "Invalid sample rate!", "Exporter config", MB_OK);
+							SetDlgItemInt(hWnd, IDC_Config_SampleRate, ::ceil(1 / config.m_clipSampleRate), FALSE);
+						}
+						else
+						{
+							config.m_clipSampleRate = 1.0f / rate;
+						}
+					}
+				}
+				break;
+
+			case IDC_Config_ClipLengthScale:
+				{
+					if (HIWORD(wParam) == EN_KILLFOCUS)
+					{
+						BOOL bSucceed = FALSE;
+						float scale = GetDlgItemFloat(hWnd, IDC_Config_ClipLengthScale, &bSucceed);
+						if(!bSucceed || scale <= 0)
+						{
+							MessageBox(hWnd, "Invalid length scale!", "Exporter config", MB_OK);
+							SetDlgItemFloat(hWnd, IDC_Config_ClipLengthScale, config.m_clipLengthScale);
+						}
+						else
+						{
+							config.m_clipLengthScale = scale;
+						}
+					}
+				}
+				break;
+
+			case IDC_Config_Ok: EndDialog(hWnd, 0); break;
+			default: return FALSE;
 			}
 		}
 		break;

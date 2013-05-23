@@ -2,6 +2,7 @@
 #include "ExportDialog.h"
 #include "MyExporter.h"
 #include "resource.h"
+#include "ExportConfig.h"
 
 enum eClipViewColumn
 {
@@ -284,7 +285,7 @@ bool ExpoDlg::OnAddClip( HWND hwnd )
 	SClipParam clip;
 	clip.nStart = nStart;
 	clip.nEnd = nEnd;
-	clip.length = (nEnd - nStart) / (float)GetFrameRate();
+	clip.length = (nEnd - nStart) / (float)GetFrameRate() * CONFIG.m_clipLengthScale;
 
 	if(m_expo->AddClip(clipName, clip))
 	{

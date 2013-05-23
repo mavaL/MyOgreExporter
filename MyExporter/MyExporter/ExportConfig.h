@@ -26,6 +26,9 @@ public:
 	float			m_unitScale;						//单位转换乘数
 	bool			m_bBuildNormal;						//由max重建mesh的法线
 	std::string		m_defaultMaterialName;
+	float			m_clipSampleRate;					//动画采样的时间间隔,秒
+	bool			m_bCopyFirstFrameAsLast;			//让动画最后一帧与第一帧重合(适合循环动画)
+	float			m_clipLengthScale;					//动画快慢控制
 	IGameConversionManager::CoordSystem	m_coordSystem;	//导出坐标系
 };
 

@@ -13,12 +13,13 @@
 
 class ExpoClip : public ExpoObject
 {
+	friend class ExpoSkeleton;
 public:
 	struct SKeyFrame 
 	{
 		SKeyFrame():time(-1),position(-1,-1,-1),rotation(0.0f,0.0f,0.0f,1.0f),scale(1,1,1) {}
 
-		int		time;
+		float	time;
 		Point3	position;
 		Quat	rotation;
 		Point3	scale;
@@ -43,7 +44,7 @@ public:
 
 private:
 	void			_CollectTrack(STrack& track, ExpoSkeleton::SJoint* joint);
-	void			_CollectKeyFrame();
+	void			_CollectKeyFrame(STrack& track, ExpoSkeleton::SJoint* joint, int t);
 
 private:
 	ExpoSkeleton*	m_pOwner;

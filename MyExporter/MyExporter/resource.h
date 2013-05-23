@@ -30,6 +30,7 @@
 #define IDC_Config_UnitMeter            1009
 #define IDC_Export_AnimRemove           1010
 #define IDC_Export_Log                  1011
+#define IDC_Config_CopyFirstFrame       1011
 #define IDC_AddClip_Name                1012
 #define IDC_AddClip_Start               1014
 #define IDC_AddClip_StartSpin           1015
@@ -37,6 +38,10 @@
 #define IDC_AddClip_EndSpin             1017
 #define IDC_AddClip_Ok                  1018
 #define IDC_AddClip_Cancel              1019
+#define IDC_Config_SampleRate           1020
+#define IDC_Config_Ok                   1021
+#define IDC_Config_SampleRate2          1022
+#define IDC_Config_ClipLengthScale      1022
 #define IDC_COLOR                       1456
 #define IDC_EDIT                        1490
 #define IDC_SPIN                        1496
@@ -47,7 +52,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

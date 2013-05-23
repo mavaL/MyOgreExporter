@@ -38,23 +38,31 @@ BEGIN
     PUSHBUTTON      "Add",IDC_Export_AnimAdd,309,31,46,13
     PUSHBUTTON      "Remove",IDC_Export_AnimRemove,411,31,46,13
     GROUPBOX        "Log",IDC_STATIC,192,137,290,115
-    EDITTEXT        IDC_Export_Log,197,150,279,94,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
+    EDITTEXT        IDC_Export_Log,197,150,279,94,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
     CONTROL         "",IDC_Export_AnimList,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,198,47,279,78
 END
 
-IDD_DlgExportConfig DIALOGEX 0, 0, 175, 178
+IDD_DlgExportConfig DIALOGEX 0, 0, 341, 202
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
 CAPTION "Export Config"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     CONTROL         "D3D",IDC_Config_CoordD3D,"Button",BS_AUTORADIOBUTTON,99,36,46,11
     CONTROL         "OpenGL",IDC_Config_CoordOpenGL,"Button",BS_AUTORADIOBUTTON,99,46,46,11
-    DEFPUSHBUTTON   "OK",IDOK,109,150,50,14
-    CONTROL         "    Build Normal",IDC_Config_BuildNormal,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,39,79,68,12
+    PUSHBUTTON      "OK",IDC_Config_Ok,259,177,50,14
+    CONTROL         "    Build Normal",IDC_Config_BuildNormal,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,211,30,68,12
     LTEXT           "CoordSystem :",IDC_STATIC,33,37,52,11
-    GROUPBOX        "Option",IDC_STATIC,19,15,140,129
+    GROUPBOX        "Global Option",IDC_STATIC,19,15,140,68
     CONTROL         "3DMax",IDC_Config_Coord3DMax,"Button",BS_AUTORADIOBUTTON | WS_GROUP,99,26,46,11
     CONTROL         "    Use Meter Unit",IDC_Config_UnitMeter,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,39,62,68,12
+    GROUPBOX        "Mesh Option",IDC_STATIC,177,15,140,68
+    GROUPBOX        "Animation Option",IDC_STATIC,19,102,184,84
+    CONTROL         "    Copy first frame as the last frame",IDC_Config_CopyFirstFrame,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,118,143,12
+    LTEXT           "Samples per second :",IDC_STATIC,30,141,74,11
+    EDITTEXT        IDC_Config_SampleRate,111,138,38,14,ES_AUTOHSCROLL | ES_WANTRETURN
+    LTEXT           "Clip length scale :",IDC_STATIC,30,162,74,11
+    EDITTEXT        IDC_Config_ClipLengthScale,111,159,38,14,ES_AUTOHSCROLL | ES_WANTRETURN
 END
 
 IDD_DlgAddClip DIALOGEX 0, 0, 209, 178
@@ -94,9 +102,9 @@ BEGIN
     IDD_DlgExportConfig, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 168
+        RIGHTMARGIN, 334
         TOPMARGIN, 7
-        BOTTOMMARGIN, 171
+        BOTTOMMARGIN, 195
     END
 
     IDD_DlgAddClip, DIALOG

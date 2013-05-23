@@ -10,8 +10,6 @@
 
 namespace Utility
 {
-	GMatrix		GetLocalTransform(IGameNode* from, IGameNode* to, TimeValue t=TIME_NegInfinity);
-
 	template <class T>
 	inline void hash_combine(std::size_t & seed, const T & v)
 	{

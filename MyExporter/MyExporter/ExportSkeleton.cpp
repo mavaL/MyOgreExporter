@@ -90,10 +90,77 @@ bool ExpoSkeleton::Export()
 	for (size_t iJoint=0; iJoint<m_joints.size(); ++iJoint)
 	{
 		SJoint* parent = m_joints[iJoint]->parent;
+		if(!parent)
+			continue;
+
 		TiXmlElement* boneparent = new TiXmlElement("boneparent");  
 		hierarchy->LinkEndChild(boneparent);  
 		boneparent->SetAttribute("bone", m_joints[iJoint]->name.c_str());
-		boneparent->SetAttribute("parent", parent ? parent->name.c_str() : "");
+		boneparent->SetAttribute("parent", parent->name.c_str());
+	}
+
+	//animations
+	TiXmlElement* animations = new TiXmlElement("animations");  
+	skelNode->LinkEndChild(animations);
+
+	//per animation
+	for (size_t iClip=0; iClip<m_clips.size(); ++iClip)
+	{
+		const ExpoClip* clip = m_clips[iClip];
+		TiXmlElement* animation = new TiXmlElement("animation");  
+		animations->LinkEndChild(animation);
+		animation->SetAttribute("name", clip->m_name.c_str());
+		animation->SetDoubleAttribute("length", clip->m_length);
+
+		//per track
+		TiXmlElement* tracks = new TiXmlElement("tracks");  
+		animation->LinkEndChild(tracks);
+
+		for (size_t iTrack=0; iTrack<clip->m_tracks.size(); ++iTrack)
+		{
+			const ExpoClip::STrack& track = clip->m_tracks[iTrack];
+			TiXmlElement* trackNode = new TiXmlElement("track");  
+			tracks->LinkEndChild(trackNode);
+			trackNode->SetAttribute("bone", track.boneName.c_str());
+
+			//per keyframe
+			TiXmlElement* keyframes = new TiXmlElement("keyframes");  
+			trackNode->LinkEndChild(keyframes);
+
+			for (size_t iKf=0; iKf<track.keyFrames.size(); ++iKf)
+			{
+				const ExpoClip::SKeyFrame& kf = track.keyFrames[iKf];
+				TiXmlElement* kfNode = new TiXmlElement("keyframe");  
+				keyframes->LinkEndChild(kfNode);
+				kfNode->SetDoubleAttribute("time", kf.time);
+
+				//translation  
+				TiXmlElement* translate = new TiXmlElement("translate");  
+				kfNode->LinkEndChild(translate);  
+				translate->SetDoubleAttribute("x", kf.position.x);  
+				translate->SetDoubleAttribute("y", kf.position.y);  
+				translate->SetDoubleAttribute("z", kf.position.z);
+
+				//rotation
+				AngAxis rot(kf.rotation);
+				TiXmlElement* rotate = new TiXmlElement("rotate");  
+				kfNode->LinkEndChild(rotate);  
+				rotate->SetDoubleAttribute("angle", rot.angle);  
+
+				TiXmlElement* rotAxis = new TiXmlElement("axis");  
+				rotate->LinkEndChild(rotAxis);  
+				rotAxis->SetDoubleAttribute("x", rot.axis.x);  
+				rotAxis->SetDoubleAttribute("y", rot.axis.y);  
+				rotAxis->SetDoubleAttribute("z", rot.axis.z);
+
+				//scale
+				TiXmlElement* scale = new TiXmlElement("scale");  
+				kfNode->LinkEndChild(scale);
+				scale->SetDoubleAttribute("x", kf.scale.x);  
+				scale->SetDoubleAttribute("y", kf.scale.y);  
+				scale->SetDoubleAttribute("z", kf.scale.z);
+			}
+		}
 	}
 
 	pXmlDoc->SaveFile(m_name.c_str());
@@ -117,24 +184,24 @@ bool ExpoSkeleton::CollectInfo()
 	}
 
 	//找到所有根骨骼
-	std::vector<IGameNode*> vecRootBones;
+	std::set<IGameNode*> rootBones;
 	for (int iBone=0; iBone<m_skin->GetTotalBoneCount(); ++iBone)
 	{
 		IGameNode* pBone = m_skin->GetIGameBone(iBone);
-		while (	pBone->GetNodeParent() && 
-				m_skin->GetBoneIndex(pBone->GetNodeParent()) != -1)
+		while (	pBone->GetNodeParent() )
 		{
+			if(pBone->GetNodeParent()->GetMaxNode() == exporter.ip->GetRootNode())
+				break;
 			pBone = pBone->GetNodeParent();
 		}
 		
-		if(std::find(vecRootBones.begin(), vecRootBones.end(), pBone) == vecRootBones.end())
-			vecRootBones.push_back(pBone);
+		rootBones.insert(pBone);
 	}
 
 	//收集骨骼信息
-	for (size_t iBone=0; iBone<vecRootBones.size(); ++iBone)
+	for (auto iBone=rootBones.begin(); iBone!=rootBones.end(); ++iBone)
 	{
-		IGameNode* pRootBone = vecRootBones[iBone];
+		IGameNode* pRootBone = *iBone;
 		if(!_LoadJoint(pRootBone, nullptr))
 			return false;
 	}
@@ -211,31 +278,33 @@ ExpoSkeleton::SJoint* ExpoSkeleton::_GetJoint( IGameNode* pJoint )
 
 bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 {
-	assert(pJoint);
-	
-	//这个骨头不属于本骨骼的蒙皮
-	if(m_skin->GetBoneIndex(pJoint) == -1)
-		return true;
-
 	MyExporter& exporter = MyExporter::GetSingleton();
+	assert(pJoint);
 
-	//能肯定该joint未被解析
+// 	if(m_skin->GetBoneIndex(pJoint) == -1)
+// 		return true;
+
 	if (_GetJoint(pJoint))
 	{
-		exporter.dlgExpo->LogInfo("This seems shouldn't be happening, but joint already loaded!!!");
-		return false;
+// 		char szBuf[128];
+// 		sprintf_s(szBuf, 128, "Error:The joint already loaded!!!	 [%s]", pJoint->GetName());
+// 		exporter.dlgExpo->LogInfo(szBuf);
+//		return false;
+		return true;
 	}
 
 	SJoint* joint = new SJoint;
+	joint->node = pJoint;
 	//探测有无名字重复的joint
 	joint->name = pJoint->GetName();
 	for	(size_t i=0; i<m_joints.size(); ++i)
 	{
 		if (m_joints[i]->name == joint->name)
 		{
-			char szBuf[128];
-			sprintf_s(szBuf, 128, "Warning: Bone name duplicated.	 [%s]", joint->name.c_str());
-			exporter.dlgExpo->LogInfo(szBuf);
+// 			char szBuf[128];
+// 			sprintf_s(szBuf, 128, "Warning: Bone name duplicated.	 [%s]", joint->name.c_str());
+// 			exporter.dlgExpo->LogInfo(szBuf);
+			return true;
 		}
 	}
 
@@ -246,7 +315,7 @@ bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 	joint->parent = parent;
 
 	//获取joint变换
-	const GMatrix tm = Utility::GetLocalTransform(pJoint, pJoint->GetNodeParent());
+	const GMatrix tm = pJoint->GetLocalTM();
 	
 	joint->position = tm.Translation();		//???????????????????????????是否需要转换度量
 	joint->rotation = tm.Rotation();
@@ -264,8 +333,10 @@ bool ExpoSkeleton::_LoadJoint( IGameNode* pJoint, SJoint* parent )
 
 	//children
 	for (int iChild=0; iChild<pJoint->GetChildCount(); ++iChild)
+	{
 		if(!_LoadJoint(pJoint->GetNodeChild(iChild), joint))
 			return false;
+	}
 
 	return true;
 }

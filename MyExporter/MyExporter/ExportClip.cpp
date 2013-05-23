@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ExportClip.h"
 #include "MyExporter.h"
+#include "ExportConfig.h"
 
 ExpoClip::ExpoClip(ExpoObject* owner)
 :m_start(-1)
@@ -8,6 +9,13 @@ ExpoClip::ExpoClip(ExpoObject* owner)
 ,m_length(-1)
 {
 	m_pOwner = dynamic_cast<ExpoSkeleton*>(owner);
+}
+
+ExpoClip::~ExpoClip()
+{
+	//与骨骼脱离关联
+	if(m_pOwner)
+		m_pOwner->DeleteClip(m_name);
 }
 
 bool ExpoClip::CollectInfo()
@@ -34,19 +42,45 @@ bool ExpoClip::CollectInfo()
 	return true;
 }
 
-ExpoClip::~ExpoClip()
-{
-	//与骨骼脱离关联
-	if(m_pOwner)
-		m_pOwner->DeleteClip(m_name);
-}
-
 void ExpoClip::_CollectTrack( STrack& track, ExpoSkeleton::SJoint* joint )
 {
 	track.boneName = joint->name;
+
+	//统一转换成tick
+	int nStartTick = m_start * GetTicksPerFrame();
+	int nEndTick = m_end * GetTicksPerFrame();
+	int nRate = CONFIG.m_clipSampleRate * TIME_TICKSPERSEC;
+
+	int t;
+	for (t=nStartTick; t<=nEndTick; t+=nRate)
+		_CollectKeyFrame(track, joint, t);
+	//最后一个key
+	if(t != nEndTick)
+		_CollectKeyFrame(track, joint, nEndTick);
+
+	if(CONFIG.m_bCopyFirstFrameAsLast)
+	{
+		auto& kfs = track.keyFrames;
+		kfs[kfs.size()-1] = kfs[0];
+		kfs[kfs.size()-1].time = m_length;
+	}
 }
 
-void ExpoClip::_CollectKeyFrame()
+void ExpoClip::_CollectKeyFrame(STrack& track, ExpoSkeleton::SJoint* joint, int t)
 {
+	const GMatrix tm = joint->node->GetLocalTM(t);
+	const GMatrix relTM = joint->node->GetLocalTM(t) * joint->node->GetLocalTM().Inverse();
 
+	SKeyFrame kf;
+	kf.position = tm.Translation() - joint->position;
+	kf.rotation = relTM.Rotation();
+	kf.scale = relTM.Scaling();
+
+	AngAxis rot(kf.rotation);
+	rot.angle = -rot.angle;
+	kf.rotation.Set(rot);
+
+	kf.time = (t - m_start * GetTicksPerFrame()) / (float)TIME_TICKSPERSEC * CONFIG.m_clipLengthScale;
+
+	track.keyFrames.push_back(kf);
 }
